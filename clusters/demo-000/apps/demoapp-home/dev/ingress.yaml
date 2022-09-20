@@ -1,0 +1,25 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+  name: demoapp-home-movie
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: dev.movie.demoapp-home.example.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: demoapp-home-movie
+            port:
+              number: 80
+        path: /
+        pathType: ImplementationSpecific
+  tls:
+  - hosts:
+    - dev.movie.demoapp-home.example.com
+    secretName: dev-demoapp-home-com-tls

@@ -1,0 +1,101 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: falco
+spec:
+  chart:
+    spec:
+      chart: falco
+      sourceRef:
+        kind: HelmRepository
+        name: falco
+        namespace: flux-system
+      version: '>=2.0.2 <2.1.0'
+  interval: 1h0m0s
+  releaseName: falco
+  timeout: 60m
+  install:
+    remediation:
+      retries: 3
+    crds: Create
+  upgrade:
+    remediation:
+      retries: 3
+    crds: CreateReplace
+  values:
+    priorityClassName: system-cluster-critical
+    # https://github.com/falcosecurity/charts/tree/falco-2.0.2/falco#daemonset
+    driver:
+      enabled: true
+      kind: ebpf
+    # https://github.com/falcosecurity/charts/tree/master/falco#enabling-grpc
+    falco:
+      grpc:
+        enabled: true
+        unixSocketPath: "unix:///var/run/falco/falco.sock"
+        threadiness: 8
+      grpcOutput:
+        enabled: true
+      rules_file:
+        - /etc/falco/falco_rules.yaml
+        - /etc/falco/falco_rules.local.yaml
+        - /etc/falco/k8s_audit_rules.yaml
+        - /etc/falco/rules.d
+      plugins:
+        - name: k8saudit
+          library_path: libk8saudit.so
+          init_config:
+            ""
+            # maxEventBytes: 1048576
+            # sslCertificate: /etc/falco/falco.pem
+          open_params: "http://:9765/k8s-audit"
+        - name: json
+          library_path: libjson.so
+          init_config: ""
+      load_plugins: [k8saudit, json]
+    services:
+      - name: k8saudit-webhook
+        type: NodePort
+        ports:
+          - port: 9765 # See plugin open_params
+            nodePort: 32765
+            protocol: TCP
+    tolerations:
+    - operator: Exists   # run on all nodes in cluster
+
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: falco-exporter
+spec:
+  chart:
+    spec:
+      chart: falco-exporter
+      sourceRef:
+        kind: HelmRepository
+        name: falco
+        namespace: flux-system
+      version: '>=0.8.0 <1.0.0'
+  interval: 1h0m0s
+  releaseName: falco-exporter
+  timeout: 10m
+  install:
+    remediation:
+      retries: 3
+    crds: Create
+  upgrade:
+    remediation:
+      retries: 3
+    crds: CreateReplace
+  values:
+    serviceMonitor:
+      enabled: true
+    grafanaDashboard:
+      enabled: true
+      namespace: observability
+    prometheusRules:
+      enabled: true
+    tolerations:
+    - operator: Exists   # run on all nodes in cluster

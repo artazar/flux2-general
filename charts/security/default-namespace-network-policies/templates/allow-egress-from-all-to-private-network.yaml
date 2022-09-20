@@ -1,0 +1,21 @@
+{{- if .Values.allow_egress_private_traffic }}
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  labels:
+    {{- include "default-namespace-network-policies.labels" . | nindent 4 }}
+  name: allow-egress-from-all-to-private-network
+spec:
+  policyTypes:
+  - Egress
+  podSelector: {}
+  egress:
+  # RFC 1918
+  - to:
+    - ipBlock:
+        cidr: 10.0.0.0/8
+    - ipBlock:
+        cidr: 172.16.0.0/12
+    - ipBlock:
+        cidr: 192.168.0.0/16
+{{- end }}

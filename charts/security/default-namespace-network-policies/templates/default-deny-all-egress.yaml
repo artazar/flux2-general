@@ -1,0 +1,15 @@
+{{- if .Values.allow_egress_traffic }}
+# If any traffic is allowed, we skip creating the DENY rule completely
+{{- else }}
+---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: default-deny-all-egress
+  labels:
+    {{- include "default-namespace-network-policies.labels" . | nindent 4 }}
+spec:
+  policyTypes:
+  - Egress
+  podSelector: {}
+{{- end }}

@@ -1,0 +1,20 @@
+{{- if .Values.allow_namespace_traffic }}
+---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: allow-namespace
+  labels:
+    {{- include "default-namespace-network-policies.labels" . | nindent 4 }}
+spec:
+  policyTypes:
+  - Ingress
+  - Egress
+  podSelector: {}
+  ingress:
+  - from:
+    - podSelector: {}
+  egress:
+  - to:
+    - podSelector: {}
+{{- end }}

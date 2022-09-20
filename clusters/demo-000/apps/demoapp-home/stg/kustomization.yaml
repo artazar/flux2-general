@@ -1,0 +1,52 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: demoapp-home-dev
+resources:
+  - namespace.yaml
+  - ingress.yaml
+  - ../../../../../apps/demoapp-home
+images:
+  - name: nginxinc/nginx-unprivileged
+    newTag: '1.22'
+configMapGenerator:
+  - name: demoapp-home-movie
+    behavior: merge
+    literals:
+      - BASE_URL="https://stg.movie.demoapp-home.example.com"
+      - FOOD_URL="http://demoapp-home-food"
+      - SLEEP_URL="http://demoapp-home-sleep"
+  - name: demoapp-home-food
+    behavior: merge
+    literals:
+      - SLEEP_URL="http://demoapp-home-sleep"
+  - name: demoapp-home-sleep
+    behavior: merge
+    literals:
+      - TIMEOUT="480"
+patches:
+  # Add tolerations
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: any
+      spec:
+        template:
+          spec:
+            tolerations:
+            - key: dedicated
+              operator: Equal
+              value: stg
+    target:
+      kind: Deployment
+      labelSelector: group=demoapp-home
+  # Add variable indicating environment
+  - patch: |-
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: ENVIRONMENT
+          value: stg
+    target:
+      kind: Deployment
+      labelSelector: group=demoapp-home

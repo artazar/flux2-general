@@ -1,0 +1,56 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: awesome-prometheus-rules-mongodb
+spec:
+  groups:
+  - name: mongodb.rules
+    rules:
+    - alert: MongodbDown
+      expr: mongodb_up == 0
+      for: 0m
+      labels:
+        severity: critical
+      annotations:
+        summary: MongoDB Down (instance {{ $labels.instance }})
+        description: "MongoDB instance is down\n  LABELS = {{ $labels }}"
+    - alert: MongodbReplicaSetUnhealthy
+      expr: mongodb_rs_ok == 0
+      for: 0m
+      labels:
+        severity: critical
+      annotations:
+        summary: MongoDB Down (RS {{ $labels.rs_nm }})
+        description: "MongoDB replica set is unhealthy"
+    - alert: MongodbReplicationLag
+      expr: mongodb_rs_members_optimeDate{member_state="PRIMARY", rs_state="1"} - ON (set) mongodb_rs_members_optimeDate{member_state="SECONDARY", rs_state="2"} > 60 * 1000
+      for: 1m
+      labels:
+        severity: high
+      annotations:
+        summary: MongoDB replication lag (instance {{ $labels.instance }})
+        description: "Mongodb replication lag is more than 10s\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+    - alert: MongodbNumberCursorsOpen
+      expr: mongodb_ss_metrics_cursor_open{csr_type="total"} > 10 * 1000
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: MongoDB number cursors open (instance {{ $labels.instance }})
+        description: "Too many cursors opened by MongoDB for clients (> 10k)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+    - alert: MongodbCursorsTimeouts
+      expr: increase(mongodb_ss_metrics_cursor_timedOut[1m]) > 100
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: MongoDB cursors timeouts (instance {{ $labels.instance }})
+        description: "Too many cursors are timing out\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+    - alert: MongodbTooManyConnections
+      expr: avg by(instance) (rate(mongodb_ss_connections{conn_type="current"}[1m])) / avg by(instance) (sum (mongodb_ss_connections{conn_type="available"}) by (instance)) * 100 > 80
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: MongoDB too many connections (instance {{ $labels.instance }})
+        description: "Too many connections (> 80%)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"

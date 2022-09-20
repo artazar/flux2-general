@@ -1,0 +1,15 @@
+{{- if .Values.allow_ingress_cluster_traffic }}
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  labels:
+    {{- include "default-namespace-network-policies.labels" . | nindent 4 }}
+  name: allow-ingress-from-cluster-to-all
+spec:
+  policyTypes:
+  - Ingress
+  podSelector: {}
+  ingress:
+  - from:
+    - namespaceSelector: {}
+{{- end }}

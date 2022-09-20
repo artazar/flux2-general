@@ -1,0 +1,7 @@
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: HelmRepository
+metadata:
+  name: falco
+spec:
+  interval: 120m
+  url: https://falcosecurity.github.io/charts

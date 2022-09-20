@@ -1,0 +1,28 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: kubelet-csr-approver
+  namespace: kube-system
+spec:
+  chart:
+    spec:
+      chart: kubelet-csr-approver
+      sourceRef:
+        kind: HelmRepository
+        name: kubelet-csr-approver
+        namespace: flux-system
+      version: '>=0.2.3 <1.0.0'
+  interval: 1h0m0s
+  releaseName: kubelet-csr-approver
+  timeout: 60m
+  install:
+    remediation:
+      retries: 3
+    crds: Create
+  upgrade:
+    remediation:
+      retries: 3
+    crds: CreateReplace
+  values:
+    bypassDnsResolution: true   # our node dns names are not resolved atm

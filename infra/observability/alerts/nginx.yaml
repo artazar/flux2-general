@@ -1,0 +1,32 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: awesome-prometheus-rules-nginx
+spec:
+  groups:
+  - name: nginx.rules
+    rules:
+    - alert: NginxHighHttp4xxErrorRate
+      expr: sum(rate(nginx_ingress_controller_requests{status=~"^4.."}[1m])) by (host, node) / sum(rate(nginx_ingress_controller_requests[1m])) by (host, node) * 100 > 30
+      for: 15m
+      labels:
+        severity: high
+      annotations:
+        summary: Nginx high HTTP 4xx error rate (instance {{ $labels.host }})
+        description: 'Too many HTTP requests with status 4xx (> 5%)\n  VALUE = {{ $value | printf "%.2f" }}'
+    - alert: NginxHighHttp5xxErrorRate
+      expr: sum(rate(nginx_ingress_controller_requests{status=~"^5.."}[1m])) by (host, node) / sum(rate(nginx_ingress_controller_requests[1m])) by (host, node) * 100 > 20
+      for: 15m
+      labels:
+        severity: high
+      annotations:
+        summary: Nginx high HTTP 5xx error rate (instance {{ $labels.host }})
+        description: 'Too many HTTP requests with status 5xx (> 5%)\n  VALUE = {{ $value | printf "%.2f" }}'
+    - alert: NginxLatencyHigh
+      expr: histogram_quantile(0.99, sum(rate(nginx_ingress_controller_request_duration_seconds_bucket[2m])) by (host, node)) > 3
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: Nginx latency high (instance {{ $labels.host }})
+        description: 'Nginx p99 latency is higher than 3 seconds\n  VALUE = {{ $value | printf "%.2f" }}'

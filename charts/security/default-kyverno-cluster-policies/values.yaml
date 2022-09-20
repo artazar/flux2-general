@@ -1,0 +1,21 @@
+# Default values for default-kyverno-cluster-policies.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# -- 'enforce' to apply restrictions and 'audit' to store failures in policy reports only
+validationFailureAction: 'enforce'
+
+# -- Do not mount service account token into pods by default
+disable_automountserviceaccounttoken: true
+
+# -- Do not allow container engine socket mounts into pods
+disallow_container_sock_mounts: true
+
+# -- Do not allow to use :latest tag on container images
+disallow_latest_tag: true
+
+# -- Only allow read-only root FS inside pods
+require_ro_rootfs: true
+
+# -- Restart deployments on secret change
+restart_deployment_on_secret_change: []

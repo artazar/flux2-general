@@ -1,0 +1,43 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: prometheus-blackbox-exporter
+spec:
+  chart:
+    spec:
+      chart: prometheus-blackbox-exporter
+      sourceRef:
+        kind: HelmRepository
+        name: prometheus-community
+        namespace: flux-system
+      version: '>=7.0.0 <8.0.0'
+  interval: 1h0m0s
+  timeout: 10m
+  install:
+    remediation:
+      retries: 3
+    crds: Create
+  upgrade:
+    remediation:
+      retries: 3
+    crds: CreateReplace
+  values:
+    config:
+      modules:
+        http_2xx:
+          prober: http
+          timeout: 5s
+          http:
+            valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+            follow_redirects: true
+            preferred_ip_protocol: "ip4"
+        http_2xx_insecure:
+          prober: http
+          timeout: 5s
+          http:
+            valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+            follow_redirects: true
+            preferred_ip_protocol: "ip4"
+            tls_config:
+              insecure_skip_verify: true

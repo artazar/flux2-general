@@ -1,0 +1,40 @@
+resources:
+- ../base
+
+nameSuffix: -sleep
+
+commonLabels:
+  app: demoapp-home-sleep
+
+images:
+- name: demoapp-home
+  newName: nginxinc/nginx-unprivileged
+
+configMapGenerator:
+- name: demoapp-home
+  behavior: merge
+  literals:
+  - APP_NAME='demoapp-home-sleep'
+
+patches:
+- patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/name
+      value: demoapp-home-sleep
+  target:
+    kind: Deployment
+- patch: |-
+    - op: add
+      path: "/metadata/labels/period"
+      value: night
+  target:
+    kind: Deployment 
+- patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/resources
+      value:
+        requests:
+          cpu: 250m
+          memory: 512Mi
+  target:
+    kind: Deployment

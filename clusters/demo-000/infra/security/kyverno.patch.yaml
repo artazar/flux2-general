@@ -1,0 +1,222 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: kyverno-policies
+spec:
+  values:
+    # Audit mode for internal infra namespaces
+    validationFailureActionOverrides:
+      all:
+      - action: audit
+        namespaces:
+        - local-path-storage
+        - observability
+        - security
+    # Exclude resources that are expected to fail certain policies
+    policyExclude:
+      disallow-host-path:
+        any:
+        - resources:
+            kinds:
+            - DaemonSet
+            - Pod
+            namespaces:
+            - observability
+            names:
+            - promtail*
+            - kube-prometheus-stack-prometheus-node-exporter*
+        - resources:
+            kinds:
+            - DaemonSet
+            - Pod
+            namespaces:
+            - security
+            names:
+            - falco*
+            - falco-exporter*
+      restrict-volume-types:
+        any:
+        - resources:
+            kinds:
+            - DaemonSet
+            - Pod
+            namespaces:
+            - observability
+            names:
+            - promtail*
+            - kube-prometheus-stack-prometheus-node-exporter*
+        - resources:
+            kinds:
+            - DaemonSet
+            - Pod
+            namespaces:
+            - security
+            names:
+            - falco*
+            - falco-exporter*
+      disallow-host-ports:
+        any:
+        - resources:
+            kinds:
+            - DaemonSet
+            - Pod
+            namespaces:
+            - ingress
+            names:
+            - ingress-nginx-*
+        - resources:
+            kinds:
+            - DaemonSet
+            - Pod
+            namespaces:
+            - observability
+            names:
+            - kube-prometheus-stack-prometheus-node-exporter*
+      disallow-host-namespaces:
+        any:
+        - resources:
+            kinds:
+            - DaemonSet
+            - Pod
+            namespaces:
+            - observability
+            names:
+            - kube-prometheus-stack-prometheus-node-exporter*
+        - resources:
+            kinds:
+            - DaemonSet
+            - Pod
+            namespaces:
+            - security
+            names:
+            - falco*
+      disallow-privilege-escalation:
+        any:
+        - resources:
+            kinds:
+            - DaemonSet
+            - Pod
+            namespaces:
+            - ingress
+            names:
+            - ingress-nginx-*   # only init container to set somaxconn
+        - resources:
+            kinds:
+            - DaemonSet
+            - Pod
+            namespaces:
+            - security
+            names:
+            - falco*
+      disallow-privileged-containers:
+        any:
+        - resources:
+            kinds:
+            - DaemonSet
+            - Pod
+            namespaces:
+            - ingress
+            names:
+            - ingress-nginx-*   # only init container to set somaxconn
+      require-run-as-non-root-user:
+        any:
+        - resources:
+            kinds:
+            - DaemonSet
+            - Pod
+            namespaces:
+            - ingress
+            names:
+            - ingress-nginx-*   # only init container to set somaxconn
+      require-run-as-nonroot:
+        any:
+        - resources:
+            kinds:
+            - DaemonSet
+            - Pod
+            namespaces:
+            - ingress
+            names:
+            - ingress-nginx-*   # only init container to set somaxconn
+      disallow-capabilities:
+        any:
+        - resources:
+            kinds:
+            - DaemonSet
+            - Pod
+            namespaces:
+            - ingress
+            names:
+            - ingress-nginx-*
+        - resources:
+            kinds:
+            - DaemonSet
+            - Pod
+            namespaces:
+            - security
+            names:
+            - falco*
+      disallow-capabilities-strict:
+        any:
+        - resources:
+            kinds:
+            - DaemonSet
+            - Pod
+            namespaces:
+            - ingress
+            names:
+            - ingress-nginx-*
+        - resources:
+            kinds:
+            - DaemonSet
+            - Pod
+            namespaces:
+            - security
+            names:
+            - falco*
+        - resources:
+            kinds:
+            - Pod
+            names:
+            - cm-acme-http-solver*   # TODO: remove when fix is released: https://github.com/cert-manager/cert-manager/pull/5259/files#diff-5366eb06783ffca78472cbfb846b8d831bd4cea82c1c9a2c05dad408333c8c8d
+      restrict-seccomp:
+        any:
+        - resources:
+            kinds:
+            - DaemonSet
+            - Pod
+            namespaces:
+            - ingress
+            names:
+            - ingress-nginx-*
+        - resources:
+            kinds:
+            - DaemonSet
+            - Pod
+            namespaces:
+            - security
+            names:
+            - falco*
+      restrict-seccomp-strict:
+        any:
+        - resources:
+            kinds:
+            - DaemonSet
+            - Pod
+            namespaces:
+            - ingress
+            names:
+            - ingress-nginx-*
+        - resources:
+            kinds:
+            - DaemonSet
+            - Pod
+            namespaces:
+            - security
+            names:
+            - falco*
+        - resources:
+            kinds:
+            - Pod
+            names:
+            - cm-acme-http-solver*   # TODO: remove when fix is released: https://github.com/cert-manager/cert-manager/pull/5259/files#diff-5366eb06783ffca78472cbfb846b8d831bd4cea82c1c9a2c05dad408333c8c8d

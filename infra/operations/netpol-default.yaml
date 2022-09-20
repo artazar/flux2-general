@@ -1,0 +1,148 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: default-namespace-network-policies
+  namespace: kube-system
+spec:
+  chart:
+    spec:
+      chart: ./charts/security/default-namespace-network-policies
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+  interval: 1h0m0s
+  releaseName: default-namespace-network-policies
+  timeout: 10m
+  install:
+    remediation:
+      retries: 3
+    crds: Create
+  upgrade:
+    remediation:
+      retries: 3
+    crds: CreateReplace
+  values:
+    allow_namespace_traffic: true
+    allow_ingress_cluster_traffic: true
+    allow_egress_cluster_traffic: true
+    allow_ingress_private_traffic: false
+    allow_egress_private_traffic: false
+    allow_monitoring: true
+    allow_apiserver: true
+    allow_internet: false
+    allow_ingress_traffic: true
+    allow_egress_traffic: true
+
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: default-namespace-network-policies
+  namespace: kube-node-lease
+spec:
+  chart:
+    spec:
+      chart: ./charts/security/default-namespace-network-policies
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+  interval: 1h0m0s
+  releaseName: default-namespace-network-policies
+  timeout: 10m
+  install:
+    remediation:
+      retries: 3
+    crds: Create
+  upgrade:
+    remediation:
+      retries: 3
+    crds: CreateReplace
+  values:
+    allow_namespace_traffic: false
+    allow_ingress_cluster_traffic: false
+    allow_egress_cluster_traffic: false
+    allow_ingress_private_traffic: false
+    allow_egress_private_traffic: false
+    allow_monitoring: false
+    allow_apiserver: false
+    allow_internet: false
+    allow_ingress_traffic: false
+    allow_egress_traffic: false
+
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: default-namespace-network-policies
+  namespace: kube-public
+spec:
+  chart:
+    spec:
+      chart: ./charts/security/default-namespace-network-policies
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+  interval: 1h0m0s
+  releaseName: default-namespace-network-policies
+  timeout: 10m
+  install:
+    remediation:
+      retries: 3
+    crds: Create
+  upgrade:
+    remediation:
+      retries: 3
+    crds: CreateReplace
+  values:
+    allow_namespace_traffic: false
+    allow_ingress_cluster_traffic: false
+    allow_egress_cluster_traffic: false
+    allow_ingress_private_traffic: false
+    allow_egress_private_traffic: false
+    allow_monitoring: false
+    allow_apiserver: false
+    allow_internet: false
+    allow_ingress_traffic: false
+    allow_egress_traffic: false
+
+
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: default-namespace-network-policies
+  namespace: default
+spec:
+  chart:
+    spec:
+      chart: ./charts/security/default-namespace-network-policies
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+  interval: 1h0m0s
+  releaseName: default-namespace-network-policies
+  timeout: 10m
+  install:
+    remediation:
+      retries: 3
+    crds: Create
+  upgrade:
+    remediation:
+      retries: 3
+    crds: CreateReplace
+  values:
+    allow_namespace_traffic: false
+    allow_ingress_cluster_traffic: false
+    allow_egress_cluster_traffic: false
+    allow_ingress_private_traffic: false
+    allow_egress_private_traffic: false
+    allow_monitoring: false
+    allow_apiserver: false
+    allow_internet: false
+    allow_ingress_traffic: false
+    allow_egress_traffic: false

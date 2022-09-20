@@ -1,0 +1,7 @@
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: HelmRepository
+metadata:
+  name: teleport
+spec:
+  interval: 120m
+  url: https://charts.releases.teleport.dev

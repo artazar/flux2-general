@@ -1,0 +1,10 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: prometheus-blackbox-exporter
+spec:
+  values:
+    tolerations:
+      - key: node-role.kubernetes.io/master   # we put observability stack on controlplane nodes to utilize their resources
+        operator: Exists

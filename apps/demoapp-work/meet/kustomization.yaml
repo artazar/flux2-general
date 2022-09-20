@@ -1,0 +1,40 @@
+resources:
+- ../base
+
+nameSuffix: -meet
+
+commonLabels:
+  app: demoapp-work-meet
+
+images:
+- name: demoapp-work
+  newName: nginxinc/nginx-unprivileged
+
+configMapGenerator:
+- name: demoapp-work
+  behavior: merge
+  literals:
+  - APP_NAME='demoapp-work-meet'
+
+patches:
+- patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/name
+      value: demoapp-work-meet
+  target:
+    kind: Deployment
+- patch: |-
+    - op: add
+      path: "/metadata/labels/type"
+      value: group
+  target:
+    kind: Deployment 
+- patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/resources
+      value:
+        requests:
+          cpu: 250m
+          memory: 512Mi
+  target:
+    kind: Deployment

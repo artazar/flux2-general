@@ -1,0 +1,30 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: reflector
+  namespace: kube-system
+spec:
+  chart:
+    spec:
+      chart: reflector
+      sourceRef:
+        kind: HelmRepository
+        name: emberstack
+        namespace: flux-system
+      version: '>=6.1.47 <7.0.0'
+  interval: 1h0m0s
+  releaseName: reflector
+  timeout: 60m
+  install:
+    remediation:
+      retries: 3
+    crds: Create
+  upgrade:
+    remediation:
+      retries: 3
+    crds: CreateReplace
+  values:
+    tolerations:
+    - key: node-role.kubernetes.io/master
+      operator: Exists

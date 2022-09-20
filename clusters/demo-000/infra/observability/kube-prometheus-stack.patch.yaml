@@ -1,0 +1,107 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: kube-prometheus-stack
+spec:
+  values:
+    alertmanager:
+      alertmanagerSpec:
+        storage:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: local-path
+              resources:
+                requests:
+                  storage: 10Gi   # with local-path the size is not actually treated, but we put it here to show how we estimate data usage
+        tolerations:
+          - key: node-role.kubernetes.io/master   # we put observability stack on controlplane nodes to utilize their resources
+            operator: Exists
+        nodeSelector:
+          kubernetes.io/hostname: minikube   # we bind single node installation to particular node due to local path provisioner
+      ingress:
+        enabled: true
+        annotations:
+          nginx.ingress.kubernetes.io/auth-type: basic
+          nginx.ingress.kubernetes.io/auth-secret: basic-auth
+          nginx.ingress.kubernetes.io/auth-realm: 'Authentication Required - supply user & password'
+        hosts:
+          - alerts.example.com
+        paths:
+          - /
+        pathType: ImplementationSpecific
+        tls:
+          - secretName: alertmanager-tls
+            hosts:
+              - alerts.example.com
+
+    grafana:
+      tolerations:
+        - key: node-role.kubernetes.io/master   # we put observability stack on controlplane nodes to utilize their resources
+          operator: Exists
+      nodeSelector:
+        kubernetes.io/hostname: minikube   # we bind single node installation to particular node due to local path provisioner
+      persistence:
+        enabled: true
+        storageClassName: local-path
+        size: 10Gi
+      ingress:
+        enabled: true
+        hosts:
+          - grafana.example.com
+        paths:
+          - /
+        pathType: ImplementationSpecific
+        tls:
+          - secretName: grafana-tls
+            hosts:
+              - grafana.example.com
+
+    prometheus:
+      prometheusSpec:
+        tolerations:
+          - key: node-role.kubernetes.io/master   # we put observability stack on controlplane nodes to utilize their resources
+            operator: Exists
+        nodeSelector:
+          kubernetes.io/hostname: minikube   # we bind single node installation to particular node due to local path provisioner
+        remoteWrite:
+          - url: http://victoriametrics:8428/api/v1/write
+        remoteWriteDashboards: true
+        storageSpec:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: local-path
+              resources:
+                requests:
+                  storage: 20Gi   # with local-path the size is not actually treated, but we put it here to show how we estimate data usage
+
+      ingress:
+        enabled: true
+        annotations:
+          nginx.ingress.kubernetes.io/auth-type: basic
+          nginx.ingress.kubernetes.io/auth-secret: basic-auth
+          nginx.ingress.kubernetes.io/auth-realm: 'Authentication Required - supply user & password'
+        hosts:
+          - prometheus.example.com
+        paths:
+          - /
+        pathType: ImplementationSpecific
+        tls:
+          - secretName: prometheus-tls
+            hosts:
+              - prometheus.example.com
+
+    prometheusOperator:
+      tolerations:
+        - key: node-role.kubernetes.io/master   # we put observability stack on controlplane nodes to utilize their resources
+          operator: Exists
+      admissionWebhooks:
+        patch:
+          tolerations:
+            - key: node-role.kubernetes.io/master   # we put observability stack on controlplane nodes to utilize their resources
+              operator: Exists
+
+    kube-state-metrics:
+      tolerations:
+        - key: node-role.kubernetes.io/master   # we put observability stack on controlplane nodes to utilize their resources
+          operator: Exists

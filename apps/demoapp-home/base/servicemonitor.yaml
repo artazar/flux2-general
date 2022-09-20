@@ -1,0 +1,15 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app: demoapp-home
+    group: demoapp-home
+  name: demoapp-home
+spec:
+  endpoints:
+  - port: http
+    path: /healthz
+  selector:
+    matchLabels:
+      app: demoapp-home

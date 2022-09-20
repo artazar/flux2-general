@@ -1,0 +1,39 @@
+# Default values for default-namespace-network-policies.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# -- Supported values for cluster type: "gke" or "self-hosted"
+k8s_cluster_type: "self-hosted"
+
+# -- Namespace where Prometheus instance is running
+monitoring_namespace: "observability"
+
+# -- Allow any traffic between the applications in this namespace
+allow_namespace_traffic: false
+
+# -- Allow incoming traffic from other cluster namespaces
+allow_ingress_cluster_traffic: false
+
+# -- Allow outgoing traffic to other cluster namespaces
+allow_egress_cluster_traffic: false
+
+# -- Allow incoming traffic from internal networks
+allow_ingress_private_traffic: false
+
+# -- Allow outgoing traffic to internal networks
+allow_egress_private_traffic: false
+
+# -- Allow the namespace to be monitored by Prometheus
+allow_monitoring: false
+
+# -- Allow the namespace workloads access kube-apiserver endpoint
+allow_apiserver: false
+
+# -- Allow Internet connectivity
+allow_internet: false
+
+# -- Allow all incoming traffic
+allow_ingress_traffic: false
+
+# -- Allow all outgoing traffic
+allow_egress_traffic: false

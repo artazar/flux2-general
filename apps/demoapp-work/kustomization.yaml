@@ -1,0 +1,29 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - netpol.yaml
+  - sa.yaml
+  - call
+  - meet
+  - solve
+
+# some vars added to several app components, grouped by label
+patches:
+  - patch: |-
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: TYPE
+          value: group
+    target:
+      kind: Deployment
+      labelSelector: type=group
+  - patch: |-
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: TYPE
+          mountPath: solo
+    target:
+      kind: Deployment
+      labelSelector: type=solo

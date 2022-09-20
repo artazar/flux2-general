@@ -1,0 +1,40 @@
+resources:
+- ../base
+
+nameSuffix: -movie
+
+commonLabels:
+  app: demoapp-home-movie
+
+images:
+- name: demoapp-home
+  newName: nginxinc/nginx-unprivileged
+
+configMapGenerator:
+- name: demoapp-home
+  behavior: merge
+  literals:
+  - APP_NAME='demoapp-home-movie'
+
+patches:
+- patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/name
+      value: demoapp-home-movie
+  target:
+    kind: Deployment
+- patch: |-
+    - op: add
+      path: "/metadata/labels/period"
+      value: day
+  target:
+    kind: Deployment 
+- patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/resources
+      value:
+        requests:
+          cpu: 250m
+          memory: 512Mi
+  target:
+    kind: Deployment

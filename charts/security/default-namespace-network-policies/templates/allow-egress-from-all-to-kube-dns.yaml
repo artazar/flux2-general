@@ -1,0 +1,29 @@
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  labels:
+    {{- include "default-namespace-network-policies.labels" . | nindent 4 }}
+  name: allow-egress-from-all-to-kube-dns
+spec:
+  policyTypes:
+  - Egress
+  podSelector: {}
+  egress:
+  - ports:
+    - port: 53
+      protocol: TCP
+    - port: 53
+      protocol: UDP
+    to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    # allow nodelocaldns queries: https://kubernetes.io/docs/tasks/administer-cluster/nodelocaldns/#configuration
+    - ipBlock:
+        cidr: 169.254.20.0/16
+    # allow the pods to contact DNS service address: https://cloud.google.com/kubernetes-engine/docs/how-to/nodelocal-dns-cache#network_policy_with
+    - ipBlock:
+        cidr: {{ include "default-namespace-network-policies.KubeDNSAddress" . }}

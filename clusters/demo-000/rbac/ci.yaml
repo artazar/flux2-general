@@ -1,0 +1,85 @@
+# Dedicated service account for github actions
+# (1) Need to modify flux native resources to reconcile states
+# (2) Need to watch the rollout status of deployments
+# (3) Need to have view cluster role for readonly access to all resources
+# (4) Need to list bitnami and monitoring objects additionally for dry-run jobs
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  creationTimestamp: null
+  name: github
+  namespace: kube-system
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: github
+rules:
+- apiGroups:
+  - source.toolkit.fluxcd.io
+  resources:
+  - '*'
+  verbs: ["get", "list", "watch", "update", "patch"]
+- apiGroups:
+  - kustomize.toolkit.fluxcd.io
+  resources:
+  - '*'
+  verbs: ["get", "list", "watch", "update", "patch"]
+- apiGroups:
+  - helm.toolkit.fluxcd.io
+  resources:
+  - helmreleases
+  verbs: ["get", "list", "watch"]
+- apiGroups:
+  - bitnami.com
+  resources:
+  - sealedsecrets
+  verbs: ["get", "list", "watch"]
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - '*'
+  verbs: ["get", "list", "watch"]
+- apiGroups:
+  - cert-manager.io
+  resources:
+  - '*'
+  verbs: ["get", "list", "watch"]
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  - clusterroles
+  verbs: ["get", "list", "watch"]
+
+# Bind service account to role
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: github
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: github
+subjects:
+- kind: ServiceAccount
+  name: github
+  namespace: kube-system
+
+# Bind service account to view role
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: github-view
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+- kind: ServiceAccount
+  name: github
+  namespace: kube-system

@@ -1,0 +1,207 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: kube-prometheus-stack
+spec:
+  chart:
+    spec:
+      chart: kube-prometheus-stack
+      sourceRef:
+        kind: HelmRepository
+        name: prometheus-community
+        namespace: flux-system
+      version: '>=38.0.2 <39.0.0'
+  interval: 1h0m0s
+  timeout: 10m
+  install:
+    remediation:
+      retries: 3
+    crds: Create
+  upgrade:
+    remediation:
+      retries: 3
+    crds: CreateReplace
+  values:
+    alertmanager:
+      alertmanagerSpec:
+        alertmanagerConfiguration:
+          name: alertmanager-global
+      # Sadly, template files defined below do not work with global AlertmanagerConfig CRD, which does not yet support providing templates.
+      # So title and message format are defined explicitly in AlertmanagerConfig.
+      config:
+        templates:
+        - '/etc/alertmanager/config/*.tmpl'
+      templateFiles:
+        template_1.tmpl: |-
+          {{ define "common" }}
+            {{ range .Alerts }}
+              {{ .Annotations.summary }}
+              {{ or .Annotations.message .Annotations.description }}
+              *Details:*
+              {{ range .Labels.SortedPairs }} • *{{ .Name }}:* `{{ .Value }}`
+              {{ end }}
+            {{ end }}
+          {{ end }}
+        template_2.tmpl: |-
+          {{ define "title" }}
+            [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] [{{ .CommonLabels.severity }}] {{ .CommonLabels.alertname }}
+          {{ end }}
+
+    grafana:
+      admin:
+        existingSecret: grafana-admin-password
+        userKey: admin-user
+        passwordKey: admin-password
+      sidecar:
+        datasources:
+          url: http://victoriametrics:8428
+      additionalDataSources:
+        - name: alertmanager
+          type: camptocamp-prometheus-alertmanager-datasource
+          url: http://alertmanager-operated:9093
+          access: proxy
+          org_id: 1
+          version: 1
+          editable: false
+        - name: loki
+          type: loki
+          url: http://loki:3100
+          access: proxy
+          org_id: 1
+          version: 1
+          editable: false
+          jsonData:
+            derivedFields:
+              - datasourceUid: tempo
+                matcherRegex: \"?(?:trace_id|traceId|traceID|tid|TID)\"?(?::|=)\ ?\"?(\w+)\"?
+                name: TraceID
+                url: $${__value.raw}
+            httpMethod: GET
+        - name: tempo
+          type: tempo
+          url: http://tempo:3100
+          access: proxy
+          org_id: 1
+          version: 1
+          editable: false
+          jsonData:
+            httpMethod: GET
+            tracesToLogs:
+              datasourceUid: 'loki'
+              tags: ['job', 'instance', 'pod', 'namespace', 'cluster']
+              mappedTags: [{key: 'service.name', value: 'service'}]
+              mapTagNamesEnabled: true
+              spanStartTimeShift: '1h'
+              spanEndTimeShift: '1h'
+              filterByTraceID: false
+              filterBySpanID: false
+            serviceMap:
+              datasourceUid: 'prometheus'
+            search:
+              hide: false
+            nodeGraph:
+              enabled: true
+            lokiSearch:
+              datasourceUid: 'loki'
+      plugins:
+        - camptocamp-prometheus-alertmanager-datasource
+        - grafana-github-datasource
+        - grafana-piechart-panel
+        - vonage-status-panel
+        - briangann-gauge-panel
+
+    prometheus:
+      prometheusSpec:
+        remoteWrite:
+          - url: http://victoriametrics:8428/api/v1/write
+        remoteWriteDashboards: true
+        resources:
+          limits:
+            cpu: 4
+            memory: 32Gi
+        # *NilUsesHelmValues to false to make prometheus scrape everything in the whole cluster
+        podMonitorSelectorNilUsesHelmValues: false
+        probeSelectorNilUsesHelmValues: false
+        ruleSelectorNilUsesHelmValues: false
+        serviceMonitorSelectorNilUsesHelmValues: false
+    kubeProxy:
+      enabled: false   # by default kube-proxy is not exposed for metrics, we will leave it like this to increase security
+
+---
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: alertmanager-global
+  namespace: observability
+  labels:
+    alertmanagerConfig: global
+spec:
+  route:
+    groupBy: ['job', 'alertname']
+    groupWait: 30s
+    groupInterval: 5m
+    repeatInterval: 12h
+    receiver: 'slack-infra'
+    routes:
+    - matchers:
+      - name: alertname
+        value: Watchdog|InfoInhibitor
+        regex: true
+      receiver: 'null'
+    - matchers:
+      - name: namespace
+        value: 'demoapp.*'
+        regex: true
+      receiver: 'slack-app'
+  receivers:
+  - name: 'null'
+  - name: 'slack-infra'
+    slackConfigs:
+    - apiURL:
+        key: slackUrl
+        name: alertmanager-slack-infra
+      channel: alerts-infra
+      sendResolved: true
+      title: |-
+        [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] [{{ .CommonLabels.severity }}] [{{ .CommonLabels.namespace }}] {{ .CommonLabels.alertname }}
+      text: |-
+        {{ range .Alerts }}
+          {{ .Annotations.summary }}
+          {{ or .Annotations.message .Annotations.description }}
+          *Details:*
+          {{ range .Labels.SortedPairs }} • *{{ .Name }}:* `{{ .Value }}`
+          {{ end }}
+        {{ end }}
+  - name: 'slack-app'
+    slackConfigs:
+    - apiURL:
+        key: slackUrl
+        name: alertmanager-slack-app
+      channel: alerts-app
+      sendResolved: true
+      title: |-
+        [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] [{{ .CommonLabels.severity }}] [{{ .CommonLabels.namespace }}] {{ .CommonLabels.alertname }}
+      text: |-
+        {{ range .Alerts }}
+          {{ .Annotations.summary }}
+          {{ or .Annotations.message .Annotations.description }}
+          *Details:*
+          {{ range .Labels.SortedPairs }} • *{{ .Name }}:* `{{ .Value }}`
+          {{ end }}
+        {{ end }}
+  inhibitRules:
+  - sourceMatch:
+    - name: severity
+      value: 'critical'
+    targetMatch:
+    - name: severity
+      value: 'high'
+    equal: ['alertname']
+  - sourceMatch:
+    - name: severity
+      value: 'critical'
+    targetMatch:
+    - name: severity
+      value: 'warning'
+    equal: ['alertname']

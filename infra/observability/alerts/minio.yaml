@@ -1,0 +1,24 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: awesome-prometheus-rules-minio
+spec:
+  groups:
+  - name: minio.rules
+    rules:
+    - alert: MinioDiskOffline
+      expr: minio_cluster_disk_offline_total > 0
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        summary: Minio disk offline (instance {{ $labels.instance }})
+        description: "Minio disk is offline\n  VALUE = {{ $value }}\n"
+    - alert: MinioDiskSpaceUsage
+      expr: minio_cluster_capacity_usable_free_bytes / minio_cluster_capacity_usable_total_bytes * 100 < 10
+      for: 1m
+      labels:
+        severity: warning
+      annotations:
+        summary: Minio disk space usage (instance {{ $labels.instance }})
+        description: 'Minio available free space is low (< 10%)\n  VALUE = {{ $value | printf "%.2f" }}'

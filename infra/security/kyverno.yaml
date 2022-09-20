@@ -1,0 +1,98 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: kyverno
+spec:
+  chart:
+    spec:
+      chart: kyverno
+      sourceRef:
+        kind: HelmRepository
+        name: kyverno
+        namespace: flux-system
+      version: '>=2.5.1 <3.0.0'
+  interval: 1h0m0s
+  releaseName: kyverno
+  timeout: 60m
+  install:
+    remediation:
+      retries: 3
+    crds: Create
+  upgrade:
+    remediation:
+      retries: 3
+    crds: CreateReplace
+  values:
+    replicaCount: 3
+    networkPolicy:
+      enabled: true
+    serviceMonitor:
+      enabled: true
+    excludeKyvernoNamespace: false
+    priorityClassName: system-cluster-critical
+    tolerations:
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+
+# The chart below adds policies to confirm to Pod Security Standards
+# https://kubernetes.io/docs/concepts/security/pod-security-standards/
+# with the default level = "baseline"
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: kyverno-policies
+spec:
+  chart:
+    spec:
+      chart: kyverno-policies
+      sourceRef:
+        kind: HelmRepository
+        name: kyverno
+        namespace: flux-system
+      version: '>=2.5.1 <3.0.0'
+  interval: 1h0m0s
+  releaseName: kyverno-policies
+  timeout: 60m
+  install:
+    remediation:
+      retries: 3
+    crds: Create
+  upgrade:
+    remediation:
+      retries: 3
+    crds: CreateReplace
+  values:
+    podSecurityStandard: restricted  # set 'restricted' for full hardening
+    podSecuritySeverity: high
+    validationFailureAction: enforce   # set 'enforce' for full hardening
+
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: default-kyverno-cluster-policies
+spec:
+  chart:
+    spec:
+      chart: ./charts/security/default-kyverno-cluster-policies
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+  interval: 1h0m0s
+  releaseName: default-kyverno-cluster-policies
+  dependsOn:
+  - name: kyverno
+  timeout: 10m
+  install:
+    remediation:
+      retries: 3
+    crds: Create
+  upgrade:
+    remediation:
+      retries: 3
+    crds: CreateReplace
+  values:
+    require_ro_rootfs: false   # TODO: need to complete the work to make this 'true'

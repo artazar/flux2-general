@@ -1,0 +1,159 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: loki
+spec:
+  chart:
+    spec:
+      chart: loki
+      sourceRef:
+        kind: HelmRepository
+        name: grafana
+        namespace: flux-system
+      version: '>=2.11.0 <2.12.0'
+  interval: 1h0m0s
+  timeout: 10m
+  install:
+    remediation:
+      retries: 3
+    crds: Create
+  upgrade:
+    remediation:
+      retries: 3
+    crds: CreateReplace
+  values:
+    config:
+      compactor:
+        working_directory: /data/loki/retention
+        shared_store: aws
+        compaction_interval: 60m
+        retention_enabled: true
+      limits_config:
+        retention_period: 720h
+      chunk_store_config:
+        max_look_back_period: 720h
+      schema_config:
+        configs:
+          - from: "2020-11-13"
+            store: boltdb-shipper
+            object_store: aws
+            schema: v11
+            index:
+              prefix: index_
+              period: 24h
+      storage_config:
+        boltdb_shipper:
+          active_index_directory: /data/loki/index
+          cache_location: /data/loki/index_cache
+          cache_ttl: 24h
+          resync_interval: 1m
+          shared_store: s3
+        aws:
+          s3: https://minio.minio-infra.svc.cluster.local
+          s3forcepathstyle: true
+          bucketnames: loki-logs-storage
+          access_key_id: ${MINIO_ACCESS_KEY}
+          secret_access_key: ${MINIO_SECRET_KEY}
+          http_config:
+            ca_file: /tmp/ca-certs/ca.crt
+      ruler:
+        storage:
+          type: local
+          local:
+            directory: /rules
+        rule_path: /tmp/scratch
+        alertmanager_url: http://alertmanager-operated:9093
+        ring:
+          kvstore:
+            store: inmemory
+        enable_api: true
+      analytics:
+        reporting_enabled: false
+    alerting_groups:
+      - name: log-alerts
+        rules:
+          - alert: HighLogRate
+            expr: |
+              sum by (app, namespace)
+                (rate({namespace=~".*"}[1m]))
+                > 5000
+            for: 1m
+            labels:
+              severity: high
+            annotations:
+              summary: "High LogRate Alert for {{ $labels.app }}, current rate is {{ printf \"%.0f\" $value }}/min"
+          - alert: HighErrorRate
+            expr: |
+              sum by (app, namespace)
+                (rate({namespace=~".*"} |= "ERROR" [1m]))
+                > 100
+            for: 1m
+            labels:
+              severity: critical
+            annotations:
+              summary: "High ErrorRate Alert for {{ $labels.app }}, current rate is {{ printf \"%.0f\" $value }}/min"
+          - alert: URLCredentialsLeakedProd
+            annotations:
+              message: "{{ $labels.job }} is leaking http basic auth credentials."
+            expr: 'sum by (cluster, job, pod) (count_over_time({namespace=~".*"}|~ "://(\\w+):.*@.*:(\\d+)" [5m]) > 0)'
+            for: 10m
+            labels:
+              severity: high
+    serviceMonitor:
+      enabled: true
+
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: promtail
+  namespace: observability
+spec:
+  chart:
+    spec:
+      chart: promtail
+      sourceRef:
+        kind: HelmRepository
+        name: grafana
+        namespace: flux-system
+      version: '>=4.2.0 <5.0.0'
+  interval: 1h0m0s
+  timeout: 10m
+  install:
+    remediation:
+      retries: 3
+    crds: Create
+  upgrade:
+    remediation:
+      retries: 3
+    crds: CreateReplace
+  values:
+    extraArgs:
+      - "-config.expand-env=true"
+    config:
+      lokiAddress: http://loki-headless:3100/loki/api/v1/push
+      snippets:
+        pipelineStages:
+          - multiline:
+              # Identify timestamps as first line of a multiline block for Spring Boot default logging.
+              firstline: '^\d{4}-\d{2}-\d{2}\s\d{1,2}:\d{2}:\d{2}\.d{3}'
+              max_wait_time: 3s
+    defaultVolumes:
+      - name: containers
+        hostPath:
+          path: /var/lib/docker/containers
+      - name: logs
+        hostPath:
+          path: /var/log
+    defaultVolumeMounts:
+      - name: containers
+        mountPath: /var/lib/docker/containers
+        readOnly: true
+      - name: logs
+        mountPath: /var/log
+        readOnly: true
+    serviceMonitor:
+      enabled: true
+    tolerations:
+    - operator: Exists   # run on all nodes in cluster

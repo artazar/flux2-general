@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: security
+resources:
+  - namespace.yaml
+  - netpol.yaml
+  - falco.yaml
+  - kyverno.yaml

@@ -1,0 +1,29 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - netpol.yaml
+  - sa.yaml
+  - food
+  - movie
+  - sleep
+
+# some vars added to several app components, grouped by label
+patches:
+  - patch: |-
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: PERIOD
+          value: day
+    target:
+      kind: Deployment
+      labelSelector: period=day
+  - patch: |-
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: PERIOD
+          mountPath: night
+    target:
+      kind: Deployment
+      labelSelector: period=night

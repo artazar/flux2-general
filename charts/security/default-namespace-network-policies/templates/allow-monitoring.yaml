@@ -1,0 +1,20 @@
+{{- if .Values.allow_monitoring }}
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  labels:
+    {{- include "default-namespace-network-policies.labels" . | nindent 4 }}
+  name: allow-ingress-from-prometheus-to-all
+spec:
+  policyTypes:
+  - Ingress
+  podSelector: {}
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: {{ .Values.monitoring_namespace }}
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: prometheus
+{{- end }}

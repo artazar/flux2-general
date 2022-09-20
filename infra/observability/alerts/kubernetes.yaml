@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: awesome-prometheus-rules-k8s
+spec:
+  groups:
+  - name: kubernetes-custom.rules
+    rules:
+    - alert: KubeJobStuckOnScheduling
+      expr: sum ((kube_job_spec_completions - kube_job_status_succeeded) * ON(job_name,namespace) GROUP_RIGHT() kube_job_owner{owner_name!=""}) by (owner_name, namespace) > 0
+      for: 60m
+      labels:
+        severity: warning
+      annotations:
+        summary: Kubernetes job scheduled for {{ $labels.owner_name }} in namespace {{ $labels.namespace }} is stuck for more than 1hr

@@ -1,0 +1,15 @@
+{{- if .Values.allow_apiserver }}
+---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: allow-egress-from-all-to-kube-apiserver
+  labels:
+    {{- include "default-namespace-network-policies.labels" . | nindent 4 }}
+spec:
+  policyTypes:
+  - Egress
+  podSelector: {}
+  egress:
+    {{- include "default-namespace-network-policies.APIServerAddress" . | nindent 4 }}
+{{- end }}
