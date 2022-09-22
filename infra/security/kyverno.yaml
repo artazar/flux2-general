@@ -66,7 +66,7 @@ spec:
   values:
     podSecurityStandard: restricted  # set 'restricted' for full hardening
     podSecuritySeverity: high
-    validationFailureAction: enforce   # set 'enforce' for full hardening
+    validationFailureAction: audit   # set 'enforce' for full hardening
 
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
