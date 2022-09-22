@@ -8,7 +8,7 @@ resources:
   - ../../../../../apps/demoapp-home
 images:
   - name: nginxinc/nginx-unprivileged
-    newTag: '1.22'
+    newTag: '1.23'
 configMapGenerator:
   - name: demoapp-home-movie
     behavior: merge
