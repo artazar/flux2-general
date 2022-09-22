@@ -4,6 +4,7 @@ namespace: demoapp-home-dev
 resources:
   - namespace.yaml
   - ingress.yaml
+  - redis.yaml
   - ../../../../../apps/demoapp-home
 images:
   - name: nginxinc/nginx-unprivileged
