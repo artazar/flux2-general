@@ -1,0 +1,31 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  name: demoapp-work
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: demoapp-work-feature2.example.com
+    http:
+      paths:
+      - backend:
+          service: demoapp-work-meet
+            name: 
+            port:
+              number: 80
+        path: /meet
+        pathType: ImplementationSpecific
+      - backend:
+          service: demoapp-work-call
+            name: 
+            port:
+              number: 80
+        path: /call
+        pathType: ImplementationSpecific
+  tls:
+  - hosts:
+    - feature2.example.com
+    secretName: feature2-example-com-tls
