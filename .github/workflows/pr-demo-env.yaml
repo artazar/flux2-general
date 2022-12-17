@@ -107,7 +107,7 @@ jobs:
 
       - uses: actions-ecosystem/action-add-labels@v1
         with:
-          labels: ${{ format('%s-%s', 'deploy', needs.check-pr.outputs.feature_name) }}
+          labels: ${{ format('{0}-{1}', 'deploy', needs.check-pr.outputs.feature_name) }}
 
       - uses: actions/github-script@v3
         env:
@@ -119,5 +119,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `$NAME namespace has been deployed, access the app at https://demoapp-work-$NAME.example.com`
+              body: `${{env.NAME}} namespace has been deployed, access the app at https://demoapp-work-${{env.NAME}}.example.com`
             })
