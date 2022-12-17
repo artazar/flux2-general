@@ -105,6 +105,10 @@ jobs:
           git tag "deploy-$NAME"
           git push origin main --tags
 
+      - uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: format("%s-%s", "deploy", needs.check-pr.outputs.feature_name)
+
       - uses: actions/github-script@v3
         env:
           NAME: ${{ needs.check-pr.outputs.feature_name }}
