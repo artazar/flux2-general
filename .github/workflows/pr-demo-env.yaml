@@ -1,13 +1,16 @@
 name: Bring up demo env
 
+inputs
+
 on:
   pull_request:
     branches:
       - main
     types:
       - opened
-    paths:
-      - clusters/demo-000/apps/demoapp-work/**
+    issue_comment:
+      types:
+      - created
   workflow_dispatch:
 
 jobs:
@@ -17,10 +20,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       
+      - uses: khan/pull-request-comment-trigger@v1.1.0
+        id: check
+        with:
+          trigger: '@deploy'
+          reaction: rocket
+          prefix_only: true
+        env:
+          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+
       - name: Dump github context
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
+
+      - name: Dump comment body
+        if: steps.check.outputs.triggered == 'true'
+        env:
+          BODY: ${{ steps.check.outputs.comment_body }}
+        run: echo $BODY
 
       # - name: Prepare PR based deployment
       #   run: | 
