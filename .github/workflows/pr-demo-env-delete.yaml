@@ -49,7 +49,7 @@ jobs:
         env:
           NAME: ${{ steps.feature_name.outputs.feature_name }}
         run: |
-          git checkout tags/${NAME}
+          git checkout tags/deploy-${NAME}
           git revert HEAD --no-edit
           git status
           git push origin main
