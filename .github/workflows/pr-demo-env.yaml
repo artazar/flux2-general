@@ -1,7 +1,5 @@
 name: Bring up demo env
 
-inputs
-
 on:
   pull_request:
     branches:
