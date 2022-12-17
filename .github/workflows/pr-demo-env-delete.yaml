@@ -21,6 +21,7 @@ jobs:
         uses: actions/checkout@master
         with:
           ref: main
+          fetch-depth: 0
           repository: ${{ github.repository_owner }}/flux2-general
           token: ${{ secrets.TOKEN_RW }}
 
