@@ -6,76 +6,65 @@ on:
       - main
     types:
       - closed
-    paths:
-      - clusters/demo-000/apps/demoapp-work/**
   workflow_dispatch:
 
 jobs:
-  demo-env:
+  demo-env-delete:
+    if: startsWith(github.event.label.*.name, 'deploy-')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - name: Checkout Flux repo
+        uses: actions/checkout@master
+        with:
+          ref: main
+          repository: ${{ github.repository_owner }}/flux2-general
+          token: ${{ secrets.TOKEN_RW }}
+
+      - name: Get PR labels
+        id: pr-labels
+        uses: joerick/pr-labels-action@v1.0.6
 
       - name: Dump github context
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
 
-      # - name: Update application version
-      #   id: commit_version
-      #   run: | 
-      #     yq --version
+      - name: Extract feature name
+        id: feature_name
+        env:
+          LABELS: ${{ steps.pr-labels.outputs.labels }}
+        run: |
+          echo $LABELS
+          LABEL1=$(echo $LABELS | grep -o -E "deploy-[a-zA-Z]*" | sed "s|deploy-||")
+          printenv | grep GITHUB_PR_LABEL_DEPLOY
+          LABEL2=$(printenv | grep GITHUB_PR_LABEL_DEPLOY | sed "s|DEPLOY_||")
+          echo "LABEL1 is $LABEL1 and LABEL2 is $LABEL2"
+          echo "feature_name=$LABEL2" >> $GITHUB_OUTPUT
 
-      #     # namespace should be named as <APP_GROUP>-<ENV>, e.g myapp-dev
-      #     export APP_GROUP=$(echo $NAMESPACE | cut -d- -f1)
-      #     export ENV=$(echo $NAMESPACE | cut -d- -f2-)
-      #     # TODO: remove default cluster name when all deployments are ready
-      #     export APP_KS_PATH=kubernetes/clusters/${CLUSTER-pm-001}/apps/${APP_GROUP}/${ENV}/kustomization.yaml
+      - name: Clean up
+        env:
+          NAME: ${{ steps.feature_name.outputs.feature_name }}
+        run: |
+          git checkout tags/${NAME}
+          git revert HEAD --no-edit
+          git status
+          git push origin main
+          git tag -d ${NAME}
+          git push --delete origin ${NAME}
 
-      #     echo 'Working with kustomization file:'
-      #     ls ${APP_KS_PATH}
-
-      #     # convert IMAGE_REPO to lowercase manually, no native support inside github expressions
-      #     # ref: https://github.com/github/feedback/discussions/10553
-      #     export IMAGE_REPO_LOWER=${IMAGE_REPO,,}
-      #     echo "Image repo is ${IMAGE_REPO_LOWER}"
-      #     echo "New app version is ${APP_VERSION}"
-      #     echo 'Before changes:'
-      #     yq '.images[] | select(.name == env(IMAGE_REPO_LOWER))' ${APP_KS_PATH}
-      #     # set the image version with single quotes: 
-      #     # https://mikefarah.gitbook.io/yq/operators/style#update-and-set-style-of-a-particular-node-using-path-variables
-      #     yq -i 'with((.images[] | select(.name == env(IMAGE_REPO_LOWER))).newTag ; . = env(APP_VERSION) | . style="single")' ${APP_KS_PATH}
-      #     echo 'After changes:'
-      #     yq '.images[] | select(.name == env(IMAGE_REPO_LOWER))' ${APP_KS_PATH}
-
-      #     # Make a git commit
-      #     git config user.name "GitHub Actions Bot"
-      #     git config user.email "<>"
-      #     git status
-      #     git blame ${APP_KS_PATH}
-      #     git add ${APP_KS_PATH}
-      #     git commit -m "Update $APP_NAME to version $APP_VERSION at $NAMESPACE namespace" && \
-      #       SHA=$(git rev-parse HEAD) && \
-      #       echo "commit_sha=${SHA}" >> $GITHUB_OUTPUT
-      #     git status
-      #     git push origin main
-
-      #   env:
-      #     IMAGE_REPO: ${{ secrets.CONTAINER_REGISTRY }}/${{ github.repository }}
-      #     APP_VERSION: ${{ inputs.app_version }}
-      #     APP_NAME: ${{ inputs.app_name }}
-      #     NAMESPACE: ${{ inputs.namespace }}
-      #     # TODO: remove default cluster name when all deployments are ready
-      #     CLUSTER: ${{ inputs.cluster || 'pm-001' }}
-      
-      # - uses: actions/github-script@v3
-      #   with:
-      #     github-token: ${{ secrets.GITHUB_TOKEN_RW }}
-      #     script: |
-      #       github.issues.createComment({
-      #         issue_number: context.issue.number,
-      #         owner: context.repo.owner,
-      #         repo: context.repo.repo,
-      #         body: '👋 Thanks for reporting!'
-      #       })
+      - uses: actions/github-script@v3
+        env:
+          NAME: ${{ steps.feature_name.outputs.feature_name }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `${{env.NAME}} namespace has been deleted`
+            })
