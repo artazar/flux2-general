@@ -4,26 +4,23 @@ on:
   pull_request:
     branches:
       - main
-    types:
-      - opened
     issue_comment:
       types:
       - created
   workflow_dispatch:
 
 jobs:
-  demo-env:
+  check-pr:
     runs-on: ubuntu-latest
+    outputs:
+      check: ${{ steps.check.outputs.triggered }}
+      feature_name: ${{ steps.feature_name.outputs.feature_name }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      
       - uses: khan/pull-request-comment-trigger@v1.1.0
         id: check
         with:
           trigger: '@deploy'
           reaction: rocket
-          prefix_only: true
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
 
@@ -33,10 +30,30 @@ jobs:
         run: echo "$GITHUB_CONTEXT"
 
       - name: Dump comment body
+        id: feature_name
         if: steps.check.outputs.triggered == 'true'
         env:
           BODY: ${{ steps.check.outputs.comment_body }}
-        run: echo $BODY
+        run: |
+          NAME=$(echo $BODY | sed "s|@deploy ||" | sed "s| |_|g" | cut -c 1-16)
+          echo "feature_name=$NAME" > $GITHUB_OUTPUT
+
+  demo-env:
+    needs: check-pr
+    if: ${{ needs.check-pr.outputs.check }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Dump feature name
+        id: 
+        if: steps.check.outputs.triggered == 'true'
+        env:
+          BODY: ${{ steps.check.outputs.comment_body }}
+        run: |
+          NAME=$(echo $BODY | sed "s|@deploy ||" | sed "s| |_|g" | cut -c 1-16)
+          echo "feature_name=$NAME" > $GITHUB_OUTPUT
 
       # - name: Prepare PR based deployment
       #   run: | 
