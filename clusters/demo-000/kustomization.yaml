@@ -8,3 +8,4 @@ resources:
   - apps/demoapp-home/flux-ks.yaml
   - apps/demoapp-work/flux-ks.yaml
   - apps/demoapp-work/flux-ks-feature2.yaml
+  - apps/demoapp-work/flux-ks-feature2.yaml
