@@ -49,12 +49,11 @@ jobs:
         env:
           NAME: ${{ steps.feature_name.outputs.feature_name }}
         run: |
-          git checkout tags/deploy-${NAME}
-          git revert HEAD --no-edit
+          TAG="deploy-${NAME}"
+          git revert $(git rev-list -n1 ${TAG}) --no-edit
           git status
           git push origin main
-          git tag -d ${NAME}
-          git push --delete origin ${NAME}
+          git push --delete origin ${TAG}
 
       - uses: actions/github-script@v3
         env:
