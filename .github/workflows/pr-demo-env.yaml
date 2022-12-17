@@ -44,7 +44,7 @@ jobs:
 
   demo-env:
     needs: check-pr
-    if: ${{ needs.check-pr.outputs.check }}
+    if: needs.check-pr.outputs.check == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
