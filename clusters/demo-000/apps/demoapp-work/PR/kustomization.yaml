@@ -24,16 +24,6 @@ configMapGenerator:
       - MEET_URL="http://demoapp-work-meet"
       - TIMEOUT="60"
 patches:
-  # No need for autoscaling on dev
-  - patch: |-
-      $patch: delete
-      apiVersion: autoscaling/v1
-      kind: HorizontalPodAutoscaler
-      metadata:
-        name: any
-    target:
-      kind: HorizontalPodAutoscaler
-      labelSelector: group=demoapp-work
   # No need for resource restrictions on dev
   - patch: |-
       - op: replace
