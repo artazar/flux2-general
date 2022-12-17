@@ -39,11 +39,11 @@ jobs:
           LABELS: ${{ steps.pr-labels.outputs.labels }}
         run: |
           echo $LABELS
-          LABEL1=$(echo $LABELS | grep -o -E "deploy-[a-zA-Z]*" | sed "s|deploy-||")
+          LABEL1=$(echo $LABELS | grep -o -E "deploy-[a-zA-Z0-9]*" | sed "s|deploy-||")
           printenv | grep GITHUB_PR_LABEL_DEPLOY
           LABEL2=$(printenv | grep GITHUB_PR_LABEL_DEPLOY | sed "s|DEPLOY_||")
           echo "LABEL1 is $LABEL1 and LABEL2 is $LABEL2"
-          echo "feature_name=$LABEL2" >> $GITHUB_OUTPUT
+          echo "feature_name=$LABEL1" >> $GITHUB_OUTPUT
 
       - name: Clean up
         env:
