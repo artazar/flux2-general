@@ -119,5 +119,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `${{env.NAME}} namespace has been deployed, access the app at https://demoapp-work-${{env.NAME}}.example.com`
+              body: `${{env.NAME}} namespace has been deployed, access the app at https://demoapp-work-${{env.NAME}}.example.com and merge/close the PR to remove it`
             })
