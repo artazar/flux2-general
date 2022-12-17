@@ -4,8 +4,12 @@ on:
   pull_request:
     branches:
       - main
-    issue_comment:
-      types:
+    types:
+      - opened
+      - edited
+      - synchronize
+  issue_comment:
+    types:
       - created
   workflow_dispatch:
 
@@ -42,72 +46,72 @@ jobs:
     needs: check-pr
     if: ${{ needs.check-pr.outputs.check }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - name: Checkout Flux repo
+        uses: actions/checkout@master
+        with:
+          ref: main
+          repository: ${{ github.repository_owner }}/flux2-general
+          token: ${{ secrets.TOKEN_RW }}
 
       - name: Dump feature name
         env:
           NAME: ${{ needs.check-pr.outputs.feature_name }}
         run: echo $NAME
 
-      # - name: Prepare PR based deployment
-      #   run: | 
+      - name: Create PR manifests
+        env:
+          NAME: ${{ needs.check-pr.outputs.feature_name }}
+        run: |
+          KS_PATH="apps/demoapp-work/flux-ks-$NAME.yaml"
 
-      # - name: Update application version
-      #   id: commit_version
-      #   run: | 
-      #     yq --version
+          yq -i '.resources += [ env(KS_PATH) ]' clusters/demo-000/kustomization.yaml
 
-      #     # namespace should be named as <APP_GROUP>-<ENV>, e.g myapp-dev
-      #     export APP_GROUP=$(echo $NAMESPACE | cut -d- -f1)
-      #     export ENV=$(echo $NAMESPACE | cut -d- -f2-)
-      #     # TODO: remove default cluster name when all deployments are ready
-      #     export APP_KS_PATH=kubernetes/clusters/${CLUSTER-pm-001}/apps/${APP_GROUP}/${ENV}/kustomization.yaml
+          echo '--- 
+          apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
+          kind: Kustomization
+          metadata:
+            name: demoapp-work-$NAME
+            namespace: flux-system
+          spec:
+            interval: 60m0s
+            sourceRef:
+              kind: GitRepository
+              name: flux-system
+            path: ./clusters/demo-000/apps/demoapp-work/$NAME
+            prune: true
+          ' | envsubst > ${KS_PATH}
 
-      #     echo 'Working with kustomization file:'
-      #     ls ${APP_KS_PATH}
+          cp -rf ./clusters/demo-000/apps/demoapp-work/PR ./clusters/demo-000/apps/demoapp-work/$NAME
+          find ./clusters/demo-000/apps/demoapp-work/$NAME -type f -exec /bin/sh -c 'envsubst < $1 > $1.tmp && mv $1.tmp $1' -- {} \;
 
-      #     # convert IMAGE_REPO to lowercase manually, no native support inside github expressions
-      #     # ref: https://github.com/github/feedback/discussions/10553
-      #     export IMAGE_REPO_LOWER=${IMAGE_REPO,,}
-      #     echo "Image repo is ${IMAGE_REPO_LOWER}"
-      #     echo "New app version is ${APP_VERSION}"
-      #     echo 'Before changes:'
-      #     yq '.images[] | select(.name == env(IMAGE_REPO_LOWER))' ${APP_KS_PATH}
-      #     # set the image version with single quotes: 
-      #     # https://mikefarah.gitbook.io/yq/operators/style#update-and-set-style-of-a-particular-node-using-path-variables
-      #     yq -i 'with((.images[] | select(.name == env(IMAGE_REPO_LOWER))).newTag ; . = env(APP_VERSION) | . style="single")' ${APP_KS_PATH}
-      #     echo 'After changes:'
-      #     yq '.images[] | select(.name == env(IMAGE_REPO_LOWER))' ${APP_KS_PATH}
+      - name: Update application version
+        id: commit_version
+        env:
+          NAME: ${{ needs.check-pr.outputs.feature_name }}
+        run: | 
+          # Make a git commit
+          git config user.name "GitHub Actions Bot"
+          git config user.email "<>"
+          git status
+          git add .
+          git commit -m "Add $NAME namespace for demoapp-work at demo-000 cluster"
+          git status
+          git push origin main
+          git tag "deploy-$NAME"
+          git push origin main --tags
 
-      #     # Make a git commit
-      #     git config user.name "GitHub Actions Bot"
-      #     git config user.email "<>"
-      #     git status
-      #     git blame ${APP_KS_PATH}
-      #     git add ${APP_KS_PATH}
-      #     git commit -m "Update $APP_NAME to version $APP_VERSION at $NAMESPACE namespace" && \
-      #       SHA=$(git rev-parse HEAD) && \
-      #       echo "commit_sha=${SHA}" >> $GITHUB_OUTPUT
-      #     git status
-      #     git push origin main
-
-      #   env:
-      #     IMAGE_REPO: ${{ secrets.CONTAINER_REGISTRY }}/${{ github.repository }}
-      #     APP_VERSION: ${{ inputs.app_version }}
-      #     APP_NAME: ${{ inputs.app_name }}
-      #     NAMESPACE: ${{ inputs.namespace }}
-      #     # TODO: remove default cluster name when all deployments are ready
-      #     CLUSTER: ${{ inputs.cluster || 'pm-001' }}
-      
-      # - uses: actions/github-script@v3
-      #   with:
-      #     github-token: ${{ secrets.GITHUB_TOKEN_RW }}
-      #     script: |
-      #       github.issues.createComment({
-      #         issue_number: context.issue.number,
-      #         owner: context.repo.owner,
-      #         repo: context.repo.repo,
-      #         body: '👋 Thanks for reporting!'
-      #       })
+      - uses: actions/github-script@v3
+        env:
+          NAME: ${{ needs.check-pr.outputs.feature_name }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `$NAME namespace has been deployed, access the app at https://demoapp-work-$NAME.example.com`
+            })
