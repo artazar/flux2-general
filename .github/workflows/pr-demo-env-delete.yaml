@@ -10,7 +10,7 @@ on:
 
 jobs:
   demo-env-delete:
-    if: startsWith(github.event.label.*.name, 'deploy-')
+    # if: startsWith(github.event.label.*.name, 'deploy-')
     runs-on: ubuntu-latest
     permissions:
       contents: write
