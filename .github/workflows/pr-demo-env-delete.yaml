@@ -51,6 +51,8 @@ jobs:
           NAME: ${{ steps.feature_name.outputs.feature_name }}
         run: |
           TAG="deploy-${NAME}"
+          git config user.name "GitHub Actions Bot"
+          git config user.email "<>"
           git revert $(git rev-list -n1 ${TAG}) --no-edit
           git status
           git push origin main
