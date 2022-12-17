@@ -65,7 +65,7 @@ jobs:
         env:
           NAME: ${{ needs.check-pr.outputs.feature_name }}
         run: |
-          KS_PATH="apps/demoapp-work/flux-ks-$NAME.yaml"
+          export KS_PATH="apps/demoapp-work/flux-ks-$NAME.yaml"
 
           yq -i '.resources += [ env(KS_PATH) ]' clusters/demo-000/kustomization.yaml
 
