@@ -4,22 +4,22 @@ kind: Ingress
 metadata:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
-  name: demoapp-work
+  name: demoapp-data-processor
 spec:
   ingressClassName: nginx
   rules:
-  - host: demoapp-work-$NAME.example.com
+  - host: demoapp-data-processor-$NAME.example.com
     http:
       paths:
       - backend:
-          service: demoapp-work-meet
+          service: demoapp-data-processor-meet
             name: 
             port:
               number: 80
         path: /meet
         pathType: ImplementationSpecific
       - backend:
-          service: demoapp-work-call
+          service: demoapp-data-processor-call
             name: 
             port:
               number: 80

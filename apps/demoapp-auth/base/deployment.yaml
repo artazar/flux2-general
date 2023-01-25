@@ -1,17 +1,17 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: demoapp-work
+  name: demoapp-auth
 spec:
   minReadySeconds: 30
   template:
     spec:
       containers:
-      - name: demoapp-work
-        image: demoapp-work:1.0
+      - name: demoapp-auth
+        image: demoapp-auth:1.0
         env:
         - name: APP_GROUP
-          value: demoapp-work
+          value: demoapp-auth
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -21,7 +21,7 @@ spec:
         volumeMounts:
         - mountPath: /tmp
           name: temp
-      serviceAccountName: demoapp-work
+      serviceAccountName: demoapp-auth
       securityContext:
         fsGroup: 2000
         runAsNonRoot: true

@@ -1,4 +1,4 @@
-# Allow traffic between api-gateway and all demoapp-home pods
+# Allow traffic between api-gateway and all demoapp-data-processor pods
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
@@ -47,6 +47,6 @@ spec:
       protocol: TCP
   podSelector:
     matchLabels:
-      app: demoapp-home-movie
+      app: demoapp-data-processor-solve
   policyTypes:
   - Egress

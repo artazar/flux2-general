@@ -5,21 +5,21 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
-  name: demoapp-home-movie
+  name: demoapp-auth-movie
 spec:
   ingressClassName: nginx
   rules:
-  - host: stg.movie.demoapp-home.example.com
+  - host: stg.movie.demoapp-auth.example.com
     http:
       paths:
       - backend:
           service:
-            name: demoapp-home-movie
+            name: demoapp-auth-movie
             port:
               number: 80
         path: /
         pathType: ImplementationSpecific
   tls:
   - hosts:
-    - stg.movie.demoapp-home.example.com
-    secretName: stg-demoapp-home-com-tls
+    - stg.movie.demoapp-auth.example.com
+    secretName: stg-demoapp-auth-com-tls

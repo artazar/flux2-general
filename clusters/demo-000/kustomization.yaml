@@ -5,5 +5,5 @@ resources:
   - rbac
   - flux-system
   - infra/flux-ks.yaml
-  - apps/demoapp-home/flux-ks.yaml
-  - apps/demoapp-work/flux-ks.yaml
+  - apps/demoapp-auth/flux-ks.yaml
+  - apps/demoapp-data-processor/flux-ks.yaml

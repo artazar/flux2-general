@@ -3,13 +3,13 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    app: demoapp-work
-    group: demoapp-work
-  name: demoapp-work
+    app: demoapp-auth
+    group: demoapp-auth
+  name: demoapp-auth
 spec:
   endpoints:
   - port: http
     path: /healthz
   selector:
     matchLabels:
-      app: demoapp-work
+      app: demoapp-auth

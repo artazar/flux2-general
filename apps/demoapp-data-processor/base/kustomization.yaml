@@ -6,8 +6,8 @@ resources:
 - pdb.yaml
 - servicemonitor.yaml
 commonLabels:
-  group: demoapp-work
+  group: demoapp-data-processor
 configMapGenerator:
-- name: demoapp-work
+- name: demoapp-data-processor
   literals:
   - PORT='8080'

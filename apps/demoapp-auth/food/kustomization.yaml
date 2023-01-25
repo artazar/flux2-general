@@ -1,32 +1,32 @@
 resources:
 - ../base
 
-nameSuffix: -sleep
+nameSuffix: -food
 
 commonLabels:
-  app: demoapp-home-sleep
+  app: demoapp-auth-food
 
 images:
-- name: demoapp-home
+- name: demoapp-auth
   newName: nginxinc/nginx-unprivileged
 
 configMapGenerator:
-- name: demoapp-home
+- name: demoapp-auth
   behavior: merge
   literals:
-  - APP_NAME='demoapp-home-sleep'
+  - APP_NAME='demoapp-auth-food'
 
 patches:
 - patch: |-
     - op: replace
       path: /spec/template/spec/containers/0/name
-      value: demoapp-home-sleep
+      value: demoapp-auth-food
   target:
     kind: Deployment
 - patch: |-
     - op: add
       path: "/metadata/labels/period"
-      value: night
+      value: day
   target:
     kind: Deployment 
 - patch: |-

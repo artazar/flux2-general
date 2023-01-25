@@ -1,26 +1,26 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: demoapp-home-dev
+namespace: demoapp-auth-dev
 resources:
   - namespace.yaml
   - ingress.yaml
   - redis.yaml
-  - ../../../../../apps/demoapp-home
+  - ../../../../../apps/demoapp-auth
 images:
   - name: nginxinc/nginx-unprivileged
     newTag: '1.23'
 configMapGenerator:
-  - name: demoapp-home-movie
+  - name: demoapp-auth-movie
     behavior: merge
     literals:
-      - BASE_URL="https://dev.movie.demoapp-home.example.com"
-      - FOOD_URL="http://demoapp-home-food"
-      - SLEEP_URL="http://demoapp-home-sleep"
-  - name: demoapp-home-food
+      - BASE_URL="https://dev.movie.demoapp-auth.example.com"
+      - FOOD_URL="http://demoapp-auth-food"
+      - SLEEP_URL="http://demoapp-auth-sleep"
+  - name: demoapp-auth-food
     behavior: merge
     literals:
-      - SLEEP_URL="http://demoapp-home-sleep"
-  - name: demoapp-home-sleep
+      - SLEEP_URL="http://demoapp-auth-sleep"
+  - name: demoapp-auth-sleep
     behavior: merge
     literals:
       - TIMEOUT="480"
@@ -34,7 +34,7 @@ patches:
         name: any
     target:
       kind: HorizontalPodAutoscaler
-      labelSelector: group=demoapp-home
+      labelSelector: group=demoapp-auth
   # No need for resource restrictions on dev
   - patch: |-
       - op: replace
@@ -42,7 +42,7 @@ patches:
         value: {}
     target:
       kind: Deployment
-      labelSelector: group=demoapp-home
+      labelSelector: group=demoapp-auth
   # Add tolerations
   - patch: |-
       apiVersion: apps/v1
@@ -58,7 +58,7 @@ patches:
               value: dev
     target:
       kind: Deployment
-      labelSelector: group=demoapp-home
+      labelSelector: group=demoapp-auth
   # Add variable indicating environment
   - patch: |-
       - op: add
@@ -68,4 +68,4 @@ patches:
           value: dev
     target:
       kind: Deployment
-      labelSelector: group=demoapp-home
+      labelSelector: group=demoapp-auth

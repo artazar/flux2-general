@@ -1,17 +1,17 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: demoapp-home
+  name: demoapp-data-processor
 spec:
   minReadySeconds: 30
   template:
     spec:
       containers:
-      - name: demoapp-home
-        image: demoapp-home:1.0
+      - name: demoapp-data-processor
+        image: demoapp-data-processor:1.0
         env:
         - name: APP_GROUP
-          value: demoapp-home
+          value: demoapp-data-processor
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -21,7 +21,7 @@ spec:
         volumeMounts:
         - mountPath: /tmp
           name: temp
-      serviceAccountName: demoapp-home
+      serviceAccountName: demoapp-data-processor
       securityContext:
         fsGroup: 2000
         runAsNonRoot: true

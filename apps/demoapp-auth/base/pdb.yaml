@@ -1,9 +1,9 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: demoapp-home
+  name: demoapp-auth
 spec:
   minAvailable: 0
   selector:
     matchLabels:
-      app: demoapp-home
+      app: demoapp-auth

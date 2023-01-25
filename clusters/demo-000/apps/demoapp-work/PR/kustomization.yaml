@@ -1,27 +1,27 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: demoapp-work-$NAME
+namespace: demoapp-data-processor-$NAME
 resources:
   - namespace.yaml
-  - ../../../../../apps/demoapp-work
+  - ../../../../../apps/demoapp-data-processor
 images:
   - name: nginxinc/nginx-unprivileged
     newTag: '1.22'
 configMapGenerator:
-  - name: demoapp-work-call
+  - name: demoapp-data-processor-call
     behavior: merge
     literals:
-      - BASE_URL="https://demoapp-work-$NAME.example.com"
-      - MEET_URL="http://demoapp-work-meet"
-      - SOLVE_URL="http://demoapp-work-solve"
-  - name: demoapp-work-meet
+      - BASE_URL="https://demoapp-data-processor-$NAME.example.com"
+      - MEET_URL="http://demoapp-data-processor-meet"
+      - SOLVE_URL="http://demoapp-data-processor-solve"
+  - name: demoapp-data-processor-meet
     behavior: merge
     literals:
-      - SOLVE_URL="http://demoapp-work-solve"
-  - name: demoapp-work-solve
+      - SOLVE_URL="http://demoapp-data-processor-solve"
+  - name: demoapp-data-processor-solve
     behavior: merge
     literals:
-      - MEET_URL="http://demoapp-work-meet"
+      - MEET_URL="http://demoapp-data-processor-meet"
       - TIMEOUT="60"
 patches:
   # No need for resource restrictions on dev
@@ -31,7 +31,7 @@ patches:
         value: {}
     target:
       kind: Deployment
-      labelSelector: group=demoapp-work
+      labelSelector: group=demoapp-data-processor
   # Add tolerations
   - patch: |-
       apiVersion: apps/v1
@@ -47,7 +47,7 @@ patches:
               value: dev
     target:
       kind: Deployment
-      labelSelector: group=demoapp-work
+      labelSelector: group=demoapp-data-processor
   # Add variable indicating environment
   - patch: |-
       - op: add
@@ -57,4 +57,4 @@ patches:
           value: dev
     target:
       kind: Deployment
-      labelSelector: group=demoapp-work
+      labelSelector: group=demoapp-data-processor

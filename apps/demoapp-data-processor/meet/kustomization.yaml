@@ -4,23 +4,23 @@ resources:
 nameSuffix: -meet
 
 commonLabels:
-  app: demoapp-work-meet
+  app: demoapp-data-processor-meet
 
 images:
-- name: demoapp-work
+- name: demoapp-data-processor
   newName: nginxinc/nginx-unprivileged
 
 configMapGenerator:
-- name: demoapp-work
+- name: demoapp-data-processor
   behavior: merge
   literals:
-  - APP_NAME='demoapp-work-meet'
+  - APP_NAME='demoapp-data-processor-meet'
 
 patches:
 - patch: |-
     - op: replace
       path: /spec/template/spec/containers/0/name
-      value: demoapp-work-meet
+      value: demoapp-data-processor-meet
   target:
     kind: Deployment
 - patch: |-

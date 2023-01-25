@@ -1,32 +1,32 @@
 resources:
 - ../base
 
-nameSuffix: -solve
+nameSuffix: -call
 
 commonLabels:
-  app: demoapp-work-solve
+  app: demoapp-data-processor-call
 
 images:
-- name: demoapp-work
+- name: demoapp-data-processor
   newName: nginxinc/nginx-unprivileged
 
 configMapGenerator:
-- name: demoapp-work
+- name: demoapp-data-processor
   behavior: merge
   literals:
-  - APP_NAME='demoapp-work-solve'
+  - APP_NAME='demoapp-data-processor-call'
 
 patches:
 - patch: |-
     - op: replace
       path: /spec/template/spec/containers/0/name
-      value: demoapp-work-solve
+      value: demoapp-data-processor-call
   target:
     kind: Deployment
 - patch: |-
     - op: add
       path: "/metadata/labels/type"
-      value: solo
+      value: group
   target:
     kind: Deployment 
 - patch: |-

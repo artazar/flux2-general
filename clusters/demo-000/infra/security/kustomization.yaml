@@ -20,10 +20,10 @@ patches:
         values:
           restart_deployment_on_secret_change:
           - deployment: 
-              namespace: demoapp-home-prod
+              namespace: demoapp-auth-prod
             secret: 
               name: cluster-ca-root-secret
-              namespace: demoapp-home-prod
+              namespace: demoapp-auth-prod
 
     target:
       kind: HelmRelease

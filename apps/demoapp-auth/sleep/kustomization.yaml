@@ -1,32 +1,32 @@
 resources:
 - ../base
 
-nameSuffix: -call
+nameSuffix: -sleep
 
 commonLabels:
-  app: demoapp-work-call
+  app: demoapp-auth-sleep
 
 images:
-- name: demoapp-work
+- name: demoapp-auth
   newName: nginxinc/nginx-unprivileged
 
 configMapGenerator:
-- name: demoapp-work
+- name: demoapp-auth
   behavior: merge
   literals:
-  - APP_NAME='demoapp-work-call'
+  - APP_NAME='demoapp-auth-sleep'
 
 patches:
 - patch: |-
     - op: replace
       path: /spec/template/spec/containers/0/name
-      value: demoapp-work-call
+      value: demoapp-auth-sleep
   target:
     kind: Deployment
 - patch: |-
     - op: add
-      path: "/metadata/labels/type"
-      value: group
+      path: "/metadata/labels/period"
+      value: night
   target:
     kind: Deployment 
 - patch: |-

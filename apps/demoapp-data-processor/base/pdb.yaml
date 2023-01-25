@@ -1,9 +1,9 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: demoapp-work
+  name: demoapp-data-processor
 spec:
   minAvailable: 0
   selector:
     matchLabels:
-      app: demoapp-work
+      app: demoapp-data-processor

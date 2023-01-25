@@ -10,12 +10,12 @@ The structure:
 
 The following units are added as separate Flux kustomization resources, subject to independent reconciliations:
 
-- apps/demoapp-home
+- apps/demoapp-auth
   - dev
   - stg
   - prod
 
-- apps/demoapp-work
+- apps/demoapp-data-processor
   - dev
 
 - infra

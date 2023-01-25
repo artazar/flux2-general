@@ -1,25 +1,25 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: demoapp-home-dev
+namespace: demoapp-auth-dev
 resources:
   - namespace.yaml
   - ingress.yaml
-  - ../../../../../apps/demoapp-home
+  - ../../../../../apps/demoapp-auth
 images:
   - name: nginxinc/nginx-unprivileged
     newTag: '1.22'
 configMapGenerator:
-  - name: demoapp-home-movie
+  - name: demoapp-auth-movie
     behavior: merge
     literals:
-      - BASE_URL="https://prod.movie.demoapp-home.example.com"
-      - FOOD_URL="http://demoapp-home-food"
-      - SLEEP_URL="http://demoapp-home-sleep"
-  - name: demoapp-home-food
+      - BASE_URL="https://prod.movie.demoapp-auth.example.com"
+      - FOOD_URL="http://demoapp-auth-food"
+      - SLEEP_URL="http://demoapp-auth-sleep"
+  - name: demoapp-auth-food
     behavior: merge
     literals:
-      - SLEEP_URL="http://demoapp-home-sleep"
-  - name: demoapp-home-sleep
+      - SLEEP_URL="http://demoapp-auth-sleep"
+  - name: demoapp-auth-sleep
     behavior: merge
     literals:
       - TIMEOUT="480"
@@ -39,7 +39,7 @@ patches:
               value: prod
     target:
       kind: Deployment
-      labelSelector: group=demoapp-home
+      labelSelector: group=demoapp-auth
   # Add variable indicating environment
   - patch: |-
       - op: add
@@ -49,4 +49,4 @@ patches:
           value: prod
     target:
       kind: Deployment
-      labelSelector: group=demoapp-home
+      labelSelector: group=demoapp-auth

@@ -4,23 +4,23 @@ resources:
 nameSuffix: -movie
 
 commonLabels:
-  app: demoapp-home-movie
+  app: demoapp-auth-movie
 
 images:
-- name: demoapp-home
+- name: demoapp-auth
   newName: nginxinc/nginx-unprivileged
 
 configMapGenerator:
-- name: demoapp-home
+- name: demoapp-auth
   behavior: merge
   literals:
-  - APP_NAME='demoapp-home-movie'
+  - APP_NAME='demoapp-auth-movie'
 
 patches:
 - patch: |-
     - op: replace
       path: /spec/template/spec/containers/0/name
-      value: demoapp-home-movie
+      value: demoapp-auth-movie
   target:
     kind: Deployment
 - patch: |-

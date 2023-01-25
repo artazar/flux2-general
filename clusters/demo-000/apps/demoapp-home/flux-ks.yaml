@@ -2,7 +2,7 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
 kind: Kustomization
 metadata:
-  name: demoapp-home-dev
+  name: demoapp-auth-dev
   namespace: flux-system
 spec:
   dependsOn:
@@ -11,14 +11,14 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: ./clusters/demo-000/apps/demoapp-home/dev
+  path: ./clusters/demo-000/apps/demoapp-auth/dev
   prune: true
 
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
 kind: Kustomization
 metadata:
-  name: demoapp-home-stg
+  name: demoapp-auth-stg
   namespace: flux-system
 spec:
   dependsOn:
@@ -27,14 +27,14 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: ./clusters/demo-000/apps/demoapp-home/stg
+  path: ./clusters/demo-000/apps/demoapp-auth/stg
   prune: true
 
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
 kind: Kustomization
 metadata:
-  name: demoapp-home-prod
+  name: demoapp-auth-prod
   namespace: flux-system
 spec:
   dependsOn:
@@ -43,5 +43,5 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: ./clusters/demo-000/apps/demoapp-home/prod
+  path: ./clusters/demo-000/apps/demoapp-auth/prod
   prune: true

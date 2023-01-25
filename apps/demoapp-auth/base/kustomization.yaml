@@ -7,8 +7,8 @@ resources:
 - hpa.yaml
 - servicemonitor.yaml
 commonLabels:
-  group: demoapp-home
+  group: demoapp-auth
 configMapGenerator:
-- name: demoapp-home
+- name: demoapp-auth
   literals:
   - PORT='8080'
