@@ -5,4 +5,4 @@ resources:
   - rbac
   - flux-system
   - infra/flux-ks.yaml
-  - apps/kustomization.yaml
+  - apps/flux-ks.yaml
