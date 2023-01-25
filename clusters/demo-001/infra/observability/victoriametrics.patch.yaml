@@ -1,0 +1,16 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: victoriametrics
+spec:
+  values:
+    server:
+      tolerations:
+      - key: node-role.kubernetes.io/master   # we put observability stack on controlplane nodes to utilize their resources
+        operator: Exists
+      nodeSelector:
+        kubernetes.io/hostname: minikube   # we bind single node installation to particular node due to local path provisioner
+      persistentVolume:
+        storageClass: local-path
+        size: 20Gi   # with local-path the size is not actually treated, but we put it here to show how we estimate data usage

@@ -1,0 +1,61 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: ingress-nginx
+spec:
+  releaseName: ingress-nginx
+  chart:
+    spec:
+      chart: ingress-nginx
+      sourceRef:
+        kind: HelmRepository
+        name: ingress-nginx
+        namespace: flux-system
+      version: ">=4.0.0 <5.0.0"
+  interval: 1h0m0s
+  timeout: 10m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  # Default values
+  # https://github.com/kubernetes/ingress-nginx/blob/main/charts/ingress-nginx/values.yaml
+  values:
+    controller:
+      kind: DaemonSet
+      image:
+        chroot: true
+      hostPort:
+        enabled: true
+      service:
+        type: ClusterIP
+      ingressClassResource:
+        name: nginx
+        default: true
+      ingressClassByName: true
+      watchIngressWithoutClass: true
+      ingressClass: nginx   # backwards compatibility
+      config:
+        enable-real-ip: "true"   # to reveal source ip properly
+        forwarded-for-header: proxy_protocol   # to reveal source ip properly
+      extraArgs:
+        enable-ssl-passthrough: true
+      # Tuning performance
+      # https://kubernetes.github.io/ingress-nginx/examples/customization/sysctl/
+      extraInitContainers:
+      - name: sysctl
+        image: alpine:3
+        securityContext:
+          privileged: true
+        command: ["sh", "-c", "sysctl -w net.core.somaxconn=32768; sysctl -w net.ipv4.ip_local_port_range='1024 65000'"]
+      allowSnippetAnnotations: false   # CVE-2021-25742
+      admissionWebhooks:
+        enabled: false
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+    defaultBackend:
+      enabled: true

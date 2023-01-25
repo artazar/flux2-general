@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo001-app
+spec:
+  minReadySeconds: 30
+  template:
+    spec:
+      containers:
+      - name: demo001-app
+        image: demo001-app:1.0
+        env:
+        - name: APP_GROUP
+          value: demo001-app
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+        volumeMounts:
+        - mountPath: /tmp
+          name: temp
+      serviceAccountName: demo001-app
+      securityContext:
+        fsGroup: 2000
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+      - name: temp
+        emptyDir: {}

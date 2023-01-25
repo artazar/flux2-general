@@ -1,0 +1,24 @@
+# Additional RBAC permissions given to Kyverno to mutate deployment resources.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kyverno:restart-deployment
+rules:
+ - apiGroups: ["apps"]
+   resources: ["deployments"]
+   verbs: ["get", "patch", "update"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kyverno:restart-deployment
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kyverno:restart-deployment
+subjects:
+- kind: ServiceAccount
+  name: kyverno
+  namespace: security

@@ -1,0 +1,30 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: security
+resources:
+  - ../../../../infra/security
+
+patches:
+  - path: kyverno.patch.yaml
+    target:
+      kind: HelmRelease
+      name: kyverno-policies
+  # Secrets are automatically synced upon update across namespaces by Reflector.
+  # This policy makes sure there is a deployment rollout when the certs are updated.
+  - patch: |-
+      apiVersion: helm.toolkit.fluxcd.io/v2beta1
+      kind: HelmRelease
+      metadata:
+        name: default-kyverno-cluster-policies
+      spec:
+        values:
+          restart_deployment_on_secret_change:
+          - deployment: demo001-app
+              namespace: app
+            secret: 
+              name: cluster-ca-root-secret
+              namespace: app
+
+    target:
+      kind: HelmRelease
+      name: default-kyverno-cluster-policies
