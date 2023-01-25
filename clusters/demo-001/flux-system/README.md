@@ -2,7 +2,7 @@ This is an automatically created location for flux-managed kustomization, it is 
 
 Flux CLI should be used to generate these base manifests:
 
-    flux bootstrap github --owner=artazar --repository=flux2-general --branch=main --path=clusters/demo-000 --token-auth --toleration-keys='node-role.kubernetes.io/master'
+    flux bootstrap github --owner=artazar --repository=flux2-general --branch=main --path=clusters/demo-001 --token-auth --toleration-keys='node-role.kubernetes.io/master'
 
 It is safe to re-run the command with a live cluster.
 
