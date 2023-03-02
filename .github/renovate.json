@@ -17,20 +17,20 @@
     "commitMessagePrefix": "[skip ci]",
     "flux": {
         "fileMatch": [
-            "infra/**",
-            "clusters/**/infra/**"
+            "infra/.*",
+            "clusters/.*/infra/.*"
         ]
     },
     "helm-values": {
         "fileMatch": [
-            "infra/**",
-            "clusters/**/infra/**"
+            "infra/.*",
+            "clusters/.*/infra/.*"
         ]
     },
     "kubernetes": {
         "fileMatch": [
-            "infra/**",
-            "clusters/**/infra/**"
+            "infra/.*",
+            "clusters/.*/infra/.*"
         ]
     },
     "regexManagers": [
