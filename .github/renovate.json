@@ -49,7 +49,6 @@
             "versioningTemplate": "{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}"
         }
     ],
-    "ignorePaths": [],
     "packageRules": [
         {
             "description": "lockFileMaintenance",
