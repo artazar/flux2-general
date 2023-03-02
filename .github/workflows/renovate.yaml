@@ -1,0 +1,21 @@
+name: Renovate
+on:
+  workflow_dispatch:
+  schedule:
+    # The "*" (#42, asterisk) character has special semantics in YAML, so this
+    # string has to be quoted.
+    - cron: '0 9 * * 0'
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3.3.0
+      - name: Self-hosted Renovate
+        uses: renovatebot/github-action@v34.82.0
+        with:
+          configurationFile: .github/renovate.json
+          token: ${{ secrets.RENOVATE_TOKEN }}
+        env:
+          RENOVATE_REPOSITORIES: ${{ github.repository }}
+          # LOG_LEVEL: debug
