@@ -1,0 +1,37 @@
+name: Flux - update version
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 4 * * 1"
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Setup Flux CLI
+        uses: fluxcd/flux2/action@main
+      - name: Check for updates
+        id: update
+        run: |
+          for cluster in demo-000 demo-001
+          do 
+            flux install --export > ./kubernetes/clusters/$cluster/flux-system/gotk-components.yaml
+          done
+
+          VERSION="$(flux -v)"
+          echo "flux_version=$VERSION" >> $GITHUB_OUTPUT
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v4
+        with:
+            token: ${{ secrets.GITHUB_TOKEN }}
+            branch: update-flux
+            commit-message: "[github automated] flux: update to ${{ steps.update.outputs.flux_version }}"
+            title: "[github automated] flux: update to ${{ steps.update.outputs.flux_version }}"
+            body: |
+              Flux is going to be updated to version ${{ steps.update.outputs.flux_version }}

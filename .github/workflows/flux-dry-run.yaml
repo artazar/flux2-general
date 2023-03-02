@@ -1,0 +1,82 @@
+name: Flux - dry-run repository definitions
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  dry-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup kubeconfig demo-000
+        run: |
+          echo ${B64_KUBECONFIG} | base64 -d > ${KUBECONFIG}
+
+          if kubectl config view
+          then
+            echo 'Successfully connected to the target cluster.'
+          else
+            echo 'Failed to connect to the target cluster.'
+            exit 1
+          fi
+        env:
+          B64_KUBECONFIG: ${{ secrets.K8S_KUBECONFIG_DEMO000_B64 }}
+          KUBECONFIG: /tmp/demo-000.kubeconfig
+
+      - name: Setup kubeconfig demo-001
+        run: |
+          echo ${B64_KUBECONFIG} | base64 -d > ${KUBECONFIG}
+
+          if kubectl config view
+          then
+            echo 'Successfully connected to the target cluster.'
+          else
+            echo 'Failed to connect to the target cluster.'
+            exit 1
+          fi
+        env:
+          B64_KUBECONFIG: ${{ secrets.K8S_KUBECONFIG_DEMO001_B64 }}
+          KUBECONFIG: /tmp/demo-001.kubeconfig
+
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            apps:
+              - 'kubernetes/clusters/demo-000/apps/**'
+              - 'kubernetes/clusters/demo-001/apps/**'
+              - 'kubernetes/apps/**'
+            infra:
+              - 'kubernetes/clusters/demo-000/infra/**'
+              - 'kubernetes/clusters/demo-001/infra/**'
+              - 'kubernetes/infra/**'
+
+      - name: Dry-run apps
+        if: steps.changes.outputs.apps == 'true'
+        run: |
+          for cluster in demo-000 demo-001
+          do
+            for env in dev stg prod
+            do
+              for app in demoapp-auth demoapp-data-processor
+              do
+                kustomize build kubernetes/clusters/$cluster/apps/$app/$env | kubectl --kubeconfig /tmp/${cluster}.kubeconfig apply --dry-run -f -
+              done
+            done
+          done
+
+      - name: Dry-run infra
+        if: steps.changes.outputs.infra == 'true'
+        run: |
+          for cluster in demo-000 demo-001
+          do
+            for group in observability security operations ingress
+            do
+              kustomize build kubernetes/clusters/$cluster/infra/$group | kubectl --kubeconfig /tmp/${cluster}.kubeconfig apply --dry-run -f -
+            done
+          done

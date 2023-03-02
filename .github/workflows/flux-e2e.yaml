@@ -1,0 +1,74 @@
+name: Flux - test cluster bootstrap
+
+on:
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Flux CLI
+        uses: fluxcd/flux2/action@main
+      - name: Setup Kubernetes Kind
+        uses: engineerd/setup-kind@v0.5.0
+        with:
+          version: "v0.11.1"
+      - name: Install Flux in Kubernetes Kind
+        run: flux install
+      - name: Setup cluster reconciliation
+        run: |
+          flux create source git flux-system \
+          --url=${{ github.event.repository.html_url }} \
+          --username=${GIT_USERNAME} \
+          --password=${GIT_PASSWORD} \
+          --branch=${GITHUB_REF#refs/heads/}
+
+          flux create kustomization flux-system \
+          --source=flux-system \
+          --path=./clusters/demo-000
+        env:
+          GIT_USERNAME: ${{ secrets.GH_USER }}
+          GIT_PASSWORD: ${{ secrets.TOKEN_RW }}
+      - name: Verify cluster reconciliation
+        run: |
+          flux get ks --no-header | \
+          cut -f1 | \
+          while read ks
+          do
+            kubectl -n flux-system wait kustomization $ks --for=condition=ready --timeout=2m
+          done
+      - name: Verify helm reconciliation
+        run: |
+          flux get hr --all-namespaces --no-header | \
+          cut -f1,2 | \
+          while read ns hr
+          do
+            kubectl -n $ns wait helmrelease $hr --for=condition=ready --timeout=2m
+          done
+      - name: Debug failure
+        if: always()
+        run: |
+          kubectl get pods --all-namespaces
+          kubectl describe pods --all-namespaces
+
+          flux get ks --no-header | \
+          cut -f1 | \
+          while read ks
+          do
+            kubectl -n flux-system describe kustomization $ks
+          done
+
+          flux get hr --all-namespaces --no-header | \
+          cut -f1,2 | \
+          while read ns hr
+          do
+            kubectl -n $ns describe helmrelease $hr
+          done
+
+          flux get all --all-namespaces
+          flux logs --all-namespaces
+      - name: Tear down cluster
+        if: always()
+        run: kind delete cluster
