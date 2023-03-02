@@ -21,7 +21,7 @@ jobs:
         run: |
           for cluster in demo-000 demo-001
           do 
-            flux install --export > ./kubernetes/clusters/$cluster/flux-system/gotk-components.yaml
+            flux install --export > ./clusters/$cluster/flux-system/gotk-components.yaml
           done
 
           VERSION="$(flux -v)"
