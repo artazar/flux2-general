@@ -15,6 +15,9 @@
     "rebaseWhen": "conflicted",
     "commitBodyTable": true,
     "commitMessagePrefix": "[skip ci]",
+    "ignorePaths": [
+        "kubernetes/clusters/**/flux-system"
+    ],
     "flux": {
         "fileMatch": [
             "infra/.*",
