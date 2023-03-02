@@ -15,7 +15,6 @@ jobs:
       - name: Setup tools
         uses: fluxcd/flux2-kustomize-helm-example/.github/actions/tools@main
       - name: Validate manifests
-        working-directory: ./clusters
         run: |
           wget https://raw.githubusercontent.com/fluxcd/flux2-kustomize-helm-example/main/scripts/validate.sh
           for dir in apps clusters infra
