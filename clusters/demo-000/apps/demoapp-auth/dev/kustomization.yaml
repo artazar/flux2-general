@@ -8,7 +8,7 @@ resources:
   - ../../../../../apps/demoapp-auth
 images:
   - name: nginxinc/nginx-unprivileged
-    newTag: '1.23'
+    newTag: '1.24'
 configMapGenerator:
   - name: demoapp-auth-movie
     behavior: merge

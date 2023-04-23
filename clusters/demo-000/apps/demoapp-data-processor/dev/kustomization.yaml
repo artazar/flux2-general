@@ -6,7 +6,7 @@ resources:
   - ../../../../../apps/demoapp-data-processor
 images:
   - name: nginxinc/nginx-unprivileged
-    newTag: '1.22'
+    newTag: '1.24'
 configMapGenerator:
   - name: demoapp-data-processor-call
     behavior: merge
