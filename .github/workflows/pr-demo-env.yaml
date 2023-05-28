@@ -109,7 +109,7 @@ jobs:
         with:
           labels: ${{ format('{0}-{1}', 'deploy', needs.check-pr.outputs.feature_name) }}
 
-      - uses: actions/github-script@v3
+      - uses: actions/github-script@v6
         env:
           NAME: ${{ needs.check-pr.outputs.feature_name }}
         with:
