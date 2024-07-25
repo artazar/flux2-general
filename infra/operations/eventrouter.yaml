@@ -1,0 +1,89 @@
+## This is a small Kubernetes add-on for forwarding cluster events to log aggregators for troubleshooting and audit purposes
+## https://github.com/heptiolabs/eventrouter
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: eventrouter
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: eventrouter
+rules:
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["get", "watch", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: eventrouter
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: eventrouter
+subjects:
+- kind: ServiceAccount
+  name: eventrouter
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: evenrouter-psp
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: baseline-psp
+subjects:
+- kind: ServiceAccount
+  name: eventrouter
+  namespace: kube-system
+---
+apiVersion: v1
+data:
+  config.json: |-
+    {
+      "sink": "glog"
+    }
+kind: ConfigMap
+metadata:
+  name: eventrouter-cm
+  namespace: kube-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eventrouter
+  namespace: kube-system
+  labels:
+    app: eventrouter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eventrouter
+  template:
+    metadata:
+      labels:
+        app: eventrouter
+        tier: control-plane-addons
+    spec:
+      containers:
+        - name: kube-eventrouter
+          image: gcr.io/heptio-images/eventrouter:v0.3
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+          - name: config-volume
+            mountPath: /etc/eventrouter
+      serviceAccount: eventrouter
+      tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+      volumes:
+        - name: config-volume
+          configMap:
+            name: eventrouter-cm

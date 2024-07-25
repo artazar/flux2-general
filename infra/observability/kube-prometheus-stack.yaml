@@ -1,5 +1,5 @@
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
   name: kube-prometheus-stack
@@ -12,7 +12,7 @@ spec:
         kind: HelmRepository
         name: prometheus-community
         namespace: flux-system
-      version: '38.0.2'
+      version: '57.0.1'
   interval: 1h0m0s
   timeout: 10m
   install:
@@ -28,6 +28,21 @@ spec:
       alertmanagerSpec:
         alertmanagerConfiguration:
           name: alertmanager-global
+        logLevel: debug
+        storage:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: local-path
+              resources:
+                requests:
+                  storage: 50Gi   # with local-path the size is not actually treated, but we put it here to show how we estimate data usage
+        tolerations:
+          - key: node-role.kubernetes.io/master   # we put observability stack on controlplane nodes to utilize their resources
+            operator: Exists
+          - key: node-role.kubernetes.io/control-plane
+            operator: Exists
+        nodeSelector:
+          kubernetes.io/hostname: pulse3   # we bind single node installation to particular node due to local path provisioner
       # Sadly, template files defined below do not work with global AlertmanagerConfig CRD, which does not yet support providing templates.
       # So title and message format are defined explicitly in AlertmanagerConfig.
       config:
@@ -48,15 +63,19 @@ spec:
           {{ define "title" }}
             [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] [{{ .CommonLabels.severity }}] {{ .CommonLabels.alertname }}
           {{ end }}
-
+      ingress:
+        enabled: false
     grafana:
-      admin:
-        existingSecret: grafana-admin-password
-        userKey: admin-user
-        passwordKey: admin-password
       sidecar:
         datasources:
           url: http://victoriametrics:8428
+      grafana.ini:
+        server:
+          enable_gzip: true
+          domain: grafana.example.com
+          root_url: https://grafana.example.com
+        users:
+          viewers_can_edit: true
       additionalDataSources:
         - name: alertmanager
           type: camptocamp-prometheus-alertmanager-datasource
@@ -79,6 +98,13 @@ spec:
                 name: TraceID
                 url: $${__value.raw}
             httpMethod: GET
+        - name: hubble
+          type: isovalent-hubble-datasource
+          url: http://hubble-relay.kube-system.svc.cluster.local
+          access: proxy
+          org_id: 1
+          version: 1
+          editable: false
         - name: tempo
           type: tempo
           url: http://tempo:3100
@@ -111,98 +137,74 @@ spec:
         - grafana-piechart-panel
         - vonage-status-panel
         - briangann-gauge-panel
+        - isovalent-hubble-datasource
+      tolerations:
+        - key: node-role.kubernetes.io/master   # we put observability stack on controlplane nodes to utilize their resources
+          operator: Exists
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+      persistence:
+        enabled: true
+        storageClassName: local-path
+        size: 50Gi
+      ingress:
+        enabled: false
 
     prometheus:
       prometheusSpec:
+        externalUrl: "https://prometheus.example.com"
+        tolerations:
+          - key: node-role.kubernetes.io/master   # we put observability stack on controlplane nodes to utilize their resources
+            operator: Exists
+          - key: node-role.kubernetes.io/control-plane
+            operator: Exists
         remoteWrite:
           - url: http://victoriametrics:8428/api/v1/write
+            # # explicitly define metrics for long storage, others stay in local prometheus instance only
+            # writeRelabelConfigs:
+            # - sourceLabels: [__name__]
+            #   regex: "(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate|node_namespace_pod_container:container_memory_working_set_bytes|node_namespace_pod_container:container_memory_cache|node_namespace_pod_container:container_memory_rss|node_namespace_pod_container:container_memory_swap|container_.*|kube_resourcequota|kube_pod_info|kube_node_.*|node_network_.*|node_netstat_.*|node_sockstat_.*|node_tcp_connection_states|node_ipvs_connections_total|node_memory_.*|node_cpu_.*|node_load.*|node_disk_.*|node_filesystem_.*|node_filefd_allocated|node_context_switches_total|nginx_ingress_controller_.*|minio_.*|jvm_*|tomcat_*|http_server_.*|pulse.*)"
+            #   action: keep
         remoteWriteDashboards: true
-        resources:
-          limits:
-            cpu: 4
-            memory: 32Gi
         # *NilUsesHelmValues to false to make prometheus scrape everything in the whole cluster
         podMonitorSelectorNilUsesHelmValues: false
         probeSelectorNilUsesHelmValues: false
         ruleSelectorNilUsesHelmValues: false
         serviceMonitorSelectorNilUsesHelmValues: false
+        storageSpec:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: local-path
+              resources:
+                requests:
+                  storage: 50Gi   # with local-path the size is not actually treated, but we put it here to show how we estimate data usage
+
+      ingress:
+        enabled: false
+
+    prometheusOperator:
+      tolerations:
+        - key: node-role.kubernetes.io/master   # we put observability stack on controlplane nodes to utilize their resources
+          operator: Exists
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+      admissionWebhooks:
+        patch:
+          tolerations:
+            - key: node-role.kubernetes.io/master   # we put observability stack on controlplane nodes to utilize their resources
+              operator: Exists
+            - key: node-role.kubernetes.io/control-plane
+              operator: Exists
+
+    kube-state-metrics:
+      tolerations:
+        - key: node-role.kubernetes.io/master   # we put observability stack on controlplane nodes to utilize their resources
+          operator: Exists
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+
+    kubeEtcd:
+      enabled: false
     kubeProxy:
       enabled: false   # by default kube-proxy is not exposed for metrics, we will leave it like this to increase security
 
----
-apiVersion: monitoring.coreos.com/v1alpha1
-kind: AlertmanagerConfig
-metadata:
-  name: alertmanager-global
-  namespace: observability
-  labels:
-    alertmanagerConfig: global
-spec:
-  route:
-    groupBy: ['job', 'alertname']
-    groupWait: 30s
-    groupInterval: 5m
-    repeatInterval: 12h
-    receiver: 'slack-infra'
-    routes:
-    - matchers:
-      - name: alertname
-        value: Watchdog|InfoInhibitor
-        regex: true
-      receiver: 'null'
-    - matchers:
-      - name: namespace
-        value: 'demoapp.*'
-        regex: true
-      receiver: 'slack-app'
-  receivers:
-  - name: 'null'
-  - name: 'slack-infra'
-    slackConfigs:
-    - apiURL:
-        key: slackUrl
-        name: alertmanager-slack-infra
-      channel: alerts-infra
-      sendResolved: true
-      title: |-
-        [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] [{{ .CommonLabels.severity }}] [{{ .CommonLabels.namespace }}] {{ .CommonLabels.alertname }}
-      text: |-
-        {{ range .Alerts }}
-          {{ .Annotations.summary }}
-          {{ or .Annotations.message .Annotations.description }}
-          *Details:*
-          {{ range .Labels.SortedPairs }} • *{{ .Name }}:* `{{ .Value }}`
-          {{ end }}
-        {{ end }}
-  - name: 'slack-app'
-    slackConfigs:
-    - apiURL:
-        key: slackUrl
-        name: alertmanager-slack-app
-      channel: alerts-app
-      sendResolved: true
-      title: |-
-        [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] [{{ .CommonLabels.severity }}] [{{ .CommonLabels.namespace }}] {{ .CommonLabels.alertname }}
-      text: |-
-        {{ range .Alerts }}
-          {{ .Annotations.summary }}
-          {{ or .Annotations.message .Annotations.description }}
-          *Details:*
-          {{ range .Labels.SortedPairs }} • *{{ .Name }}:* `{{ .Value }}`
-          {{ end }}
-        {{ end }}
-  inhibitRules:
-  - sourceMatch:
-    - name: severity
-      value: 'critical'
-    targetMatch:
-    - name: severity
-      value: 'high'
-    equal: ['alertname']
-  - sourceMatch:
-    - name: severity
-      value: 'critical'
-    targetMatch:
-    - name: severity
-      value: 'warning'
-    equal: ['alertname']

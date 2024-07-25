@@ -6,3 +6,6 @@ resources:
   - sealed-secrets
   - kubelet-csr-approver.yaml
   - reflector.yaml
+  - secret-generator.yaml
+  - etcd-defrag.yaml
+  - eventrouter.yaml

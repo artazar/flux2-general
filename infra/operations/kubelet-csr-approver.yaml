@@ -1,5 +1,5 @@
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
   name: kubelet-csr-approver
@@ -25,4 +25,5 @@ spec:
       retries: 3
     crds: CreateReplace
   values:
+    providerIpPrefixes: '10.30.0.0/16'
     bypassDnsResolution: true   # our node dns names are not resolved atm

@@ -1,0 +1,143 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: goldpinger
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: goldpinger
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+  - kind: ServiceAccount
+    name: goldpinger
+    namespace: observability
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: goldpinger
+  labels:
+    app: goldpinger
+spec:
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: goldpinger
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '8080'
+      labels:
+        app: goldpinger
+    spec:
+      serviceAccount: goldpinger
+      tolerations:
+      - operator: Exists   # run on all nodes in cluster
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 2000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: goldpinger
+          env:
+            - name: HOST
+              value: "0.0.0.0"
+            - name: PORT
+              value: "8080"
+            # injecting real hostname will make for easier to understand graphs/metrics
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            # podIP is used to select a randomized subset of nodes to ping.
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: HOSTS_TO_RESOLVE
+              value: "www.google.com play.pulsemusic.com"
+            - name: TCP_TARGETS
+              value: 10.30.7.110:27017 10.30.7.111:27017
+          image: "docker.io/bloomberg/goldpinger:3.9.0"
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+              - ALL
+          resources:
+            limits:
+              memory: 80Mi
+            requests:
+              cpu: 1m
+              memory: 40Mi
+          ports:
+            - containerPort: 8080
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: goldpinger
+  labels:
+    app: goldpinger
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      name: http
+  selector:
+    app: goldpinger
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: goldpinger
+spec:
+  endpoints:
+  - path: /metrics
+    port: http
+  selector:
+    matchLabels:
+      app: goldpinger
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: goldpinger
+spec:
+  groups:
+    - name: goldpinger
+      rules:
+        - alert: goldpinger_nodes_unhealthy
+          expr: sum(goldpinger_nodes_health_total{status="unhealthy"})
+            BY (instance, goldpinger_instance) > 0
+          for: 5m
+          annotations:
+            description: |
+              Goldpinger instance {{ $labels.goldpinger_instance }} has been reporting unhealthy nodes for at least 5 minutes.
+            summary: Instance {{ $labels.instance }} down

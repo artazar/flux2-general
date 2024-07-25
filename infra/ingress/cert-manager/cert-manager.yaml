@@ -1,5 +1,5 @@
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
   name: cert-manager
@@ -12,7 +12,7 @@ spec:
         kind: HelmRepository
         name: jetstack
         namespace: flux-system
-      version: '1.8.0'
+      version: '>=1.8.0 <2.0.0'
   interval: 1h0m0s
   releaseName: cert-manager
   timeout: 10m
@@ -38,6 +38,8 @@ spec:
     tolerations:
     - key: node-role.kubernetes.io/master
       operator: Exists
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
     webhook:
       securityContext:
         runAsNonRoot: true
@@ -50,6 +52,8 @@ spec:
           - ALL
       tolerations:
       - key: node-role.kubernetes.io/master
+        operator: Exists
+      - key: node-role.kubernetes.io/control-plane
         operator: Exists
     cainjector:
       securityContext:
@@ -64,6 +68,8 @@ spec:
       tolerations:
       - key: node-role.kubernetes.io/master
         operator: Exists
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
     startupapicheck:
       securityContext:
         runAsNonRoot: true
@@ -77,3 +83,9 @@ spec:
       tolerations:
       - key: node-role.kubernetes.io/master
         operator: Exists
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+    prometheus:
+      enabled: true
+      servicemonitor:
+        enabled: true

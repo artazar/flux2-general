@@ -9,9 +9,9 @@ spec:
     rules:
     - alert: ProbeFailing
       expr: probe_success == 0
-      for: 15m
+      for: 2m
       labels:
         severity: high
       annotations:
         summary: Endpoint Down
-        description: "Endpoint is Down: {{ $labels.instance }}"
+        description: "Endpoint is Down for 2 minutes: {{ $labels.instance }}"

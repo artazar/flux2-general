@@ -1,5 +1,5 @@
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
   name: default-namespace-network-policies
@@ -7,7 +7,7 @@ metadata:
 spec:
   chart:
     spec:
-      chart: ./charts/security/default-namespace-network-policies
+      chart: ./helm/charts/security/default-namespace-network-policies
       sourceRef:
         kind: GitRepository
         name: flux-system
@@ -36,7 +36,7 @@ spec:
     allow_egress_traffic: true
 
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
   name: default-namespace-network-policies
@@ -44,7 +44,7 @@ metadata:
 spec:
   chart:
     spec:
-      chart: ./charts/security/default-namespace-network-policies
+      chart: ./helm/charts/security/default-namespace-network-policies
       sourceRef:
         kind: GitRepository
         name: flux-system
@@ -73,7 +73,7 @@ spec:
     allow_egress_traffic: false
 
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
   name: default-namespace-network-policies
@@ -81,7 +81,7 @@ metadata:
 spec:
   chart:
     spec:
-      chart: ./charts/security/default-namespace-network-policies
+      chart: ./helm/charts/security/default-namespace-network-policies
       sourceRef:
         kind: GitRepository
         name: flux-system
@@ -111,7 +111,7 @@ spec:
 
 
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
   name: default-namespace-network-policies
@@ -119,7 +119,7 @@ metadata:
 spec:
   chart:
     spec:
-      chart: ./charts/security/default-namespace-network-policies
+      chart: ./helm/charts/security/default-namespace-network-policies
       sourceRef:
         kind: GitRepository
         name: flux-system
