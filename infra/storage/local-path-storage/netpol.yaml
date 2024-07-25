@@ -34,19 +34,3 @@ spec:
     allow_internet: false
     allow_ingress_traffic: false
     allow_egress_traffic: false
-
----
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: allow-egress-from-all-to-kube-apiserver
-spec:
-  egress:
-  - toEntities:
-    - kube-apiserver
-  - toPorts:
-    - ports:
-      - port: "6443"
-        protocol: TCP
-  endpointSelector:
-    matchLabels: {}
