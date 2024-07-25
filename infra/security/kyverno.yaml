@@ -1,5 +1,5 @@
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
   name: kyverno
@@ -11,7 +11,7 @@ spec:
         kind: HelmRepository
         name: kyverno
         namespace: flux-system
-      version: '>=2.5.1 <3.0.0'
+      version: "3.1.4"
   interval: 1h0m0s
   releaseName: kyverno
   timeout: 60m
@@ -24,22 +24,71 @@ spec:
       retries: 3
     crds: CreateReplace
   values:
-    replicaCount: 3
-    networkPolicy:
-      enabled: true
-    serviceMonitor:
-      enabled: true
-    excludeKyvernoNamespace: false
-    priorityClassName: system-cluster-critical
-    tolerations:
-    - key: node-role.kubernetes.io/master
-      operator: Exists
+    config:
+      excludeKyvernoNamespace: false
+    features:
+      policyExceptions:
+        enabled: true
+    admissionController:
+      replicas: 3
+      networkPolicy:
+        enabled: true
+      serviceMonitor:
+        enabled: true
+      resources:
+        limits:
+          memory: 512Mi
+        requests:
+          memory: 512Mi
+      priorityClassName: system-cluster-critical
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+    backgroundController:
+      resources:
+        limits:
+          memory: 512Mi
+        requests:
+          memory: 512Mi
+      serviceMonitor:
+        enabled: true
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+    cleanupController:
+      enabled: false
+    policyReportsCleanup:
+      enabled: false
+    reportsController:
+      resources:
+        limits:
+          memory: 512Mi
+        requests:
+          memory: 512Mi
+      serviceMonitor:
+        enabled: true
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+    webhooksCleanup:
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+    cleanupJobs:
+      admissionReports:
+        tolerations:
+          - key: node-role.kubernetes.io/control-plane
+            operator: Exists
+      clusterAdmissionReports:
+        tolerations:
+          - key: node-role.kubernetes.io/control-plane
+            operator: Exists
 
 # The chart below adds policies to confirm to Pod Security Standards
 # https://kubernetes.io/docs/concepts/security/pod-security-standards/
 # with the default level = "baseline"
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
   name: kyverno-policies
@@ -51,7 +100,7 @@ spec:
         kind: HelmRepository
         name: kyverno
         namespace: flux-system
-      version: '>=2.5.1 <3.0.0'
+      version: "3.1.4"
   interval: 1h0m0s
   releaseName: kyverno-policies
   timeout: 60m
@@ -64,19 +113,19 @@ spec:
       retries: 3
     crds: CreateReplace
   values:
-    podSecurityStandard: restricted  # set 'restricted' for full hardening
+    podSecurityStandard: restricted # set 'restricted' for full hardening
     podSecuritySeverity: high
-    validationFailureAction: audit   # set 'enforce' for full hardening
+    validationFailureAction: enforce # set 'enforce' for full hardening
 
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
   name: default-kyverno-cluster-policies
 spec:
   chart:
     spec:
-      chart: ./charts/security/default-kyverno-cluster-policies
+      chart: ./helm/charts/security/default-kyverno-cluster-policies
       sourceRef:
         kind: GitRepository
         name: flux-system
@@ -84,7 +133,7 @@ spec:
   interval: 1h0m0s
   releaseName: default-kyverno-cluster-policies
   dependsOn:
-  - name: kyverno
+    - name: kyverno
   timeout: 10m
   install:
     remediation:
@@ -95,4 +144,4 @@ spec:
       retries: 3
     crds: CreateReplace
   values:
-    require_ro_rootfs: false   # TODO: need to complete the work to make this 'true'
+    require_ro_rootfs: false # TODO: need to complete the work to make this 'true'

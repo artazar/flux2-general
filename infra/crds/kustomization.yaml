@@ -1,42 +1,40 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  ### source: https://github.com/prometheus-community/helm-charts/tree/kube-prometheus-stack-36.6.2/charts/kube-prometheus-stack/crds
-  - https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.59.1/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagerconfigs.yaml
-  - https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.59.1/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagers.yaml
-  - https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.59.1/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
-  - https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.59.1/example/prometheus-operator-crd/monitoring.coreos.com_probes.yaml
-  - https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.59.1/example/prometheus-operator-crd/monitoring.coreos.com_prometheuses.yaml
-  - https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.59.1/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
-  - https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.59.1/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
-  ### source: https://github.com/cert-manager/cert-manager/tree/v1.8.2/deploy/crds
-  - https://raw.githubusercontent.com/cert-manager/cert-manager/v1.8.2/deploy/crds/crd-certificaterequests.yaml
-  - https://raw.githubusercontent.com/cert-manager/cert-manager/v1.8.2/deploy/crds/crd-certificates.yaml
-  - https://raw.githubusercontent.com/cert-manager/cert-manager/v1.8.2/deploy/crds/crd-challenges.yaml
-  - https://raw.githubusercontent.com/cert-manager/cert-manager/v1.8.2/deploy/crds/crd-clusterissuers.yaml
-  - https://raw.githubusercontent.com/cert-manager/cert-manager/v1.8.2/deploy/crds/crd-issuers.yaml
-  - https://raw.githubusercontent.com/cert-manager/cert-manager/v1.8.2/deploy/crds/crd-orders.yaml
+  ### source: https://github.com/prometheus-community/helm-charts/tree/kube-prometheus-stack-57.0.1/charts/kube-prometheus-stack/charts/crds
+  - https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.72.0/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagerconfigs.yaml
+  - https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.72.0/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagers.yaml
+  - https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.72.0/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
+  - https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.72.0/example/prometheus-operator-crd/monitoring.coreos.com_probes.yaml
+  - https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.72.0/example/prometheus-operator-crd/monitoring.coreos.com_prometheuses.yaml
+  - https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.72.0/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
+  - https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.72.0/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
+  - https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.72.0/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
+  ### source: https://cert-manager.io/docs/installation/helm/
+  - https://github.com/cert-manager/cert-manager/releases/download/v1.14.4/cert-manager.crds.yaml
   ### source: https://github.com/bitnami-labs/sealed-secrets/tree/helm-v2.1.5/helm/sealed-secrets/crds
-  - https://raw.githubusercontent.com/bitnami-labs/sealed-secrets/helm-v2.1.5/helm/sealed-secrets/crds/sealedsecret-crd.yaml
+  - https://raw.githubusercontent.com/bitnami-labs/sealed-secrets/main/helm/sealed-secrets/crds/bitnami.com_sealedsecrets.yaml
+  ### source: https://github.com/bank-vaults/vault-operator/tree/v1.21.2/deploy/charts/vault-operator/crds
+  - https://raw.githubusercontent.com/bank-vaults/vault-operator/v1.22.0/deploy/charts/vault-operator/crds/crd.yaml
 
 patches:
-### cert-manager provides raw crds with templated annotations and labels that lead to errors,
-### so we replace them with the values that helm release expects
-- patch: |-
-    - op: replace
-      path: "/metadata/labels"
-      value:
-        app.kubernetes.io/instance: "cert-manager"
-        app.kubernetes.io/managed-by: "Helm"
-  target:
-    kind: CustomResourceDefinition
-    name: .*.cert-manager.io
-- patch: |-
-    - op: replace
-      path: "/metadata/annotations"
-      value:
-        meta.helm.sh/release-name: "cert-manager"
-        meta.helm.sh/release-namespace: "ingress"
-  target:
-    kind: CustomResourceDefinition
-    name: .*.cert-manager.io
+  ### cert-manager provides raw crds with templated annotations and labels that lead to errors,
+  ### so we replace them with the values that helm release expects
+  - patch: |-
+      - op: replace
+        path: "/metadata/labels"
+        value:
+          app.kubernetes.io/instance: "cert-manager"
+          app.kubernetes.io/managed-by: "Helm"
+    target:
+      kind: CustomResourceDefinition
+      name: .*.cert-manager.io
+  - patch: |-
+      - op: replace
+        path: "/metadata/annotations"
+        value:
+          meta.helm.sh/release-name: "cert-manager"
+          meta.helm.sh/release-namespace: "ingress"
+    target:
+      kind: CustomResourceDefinition
+      name: .*.cert-manager.io

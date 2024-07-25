@@ -6,19 +6,19 @@ metadata:
   namespace: kube-system
 data:
   policy.yaml: |
-    apiVersion: "descheduler/v1alpha1"
+    apiVersion: "descheduler/v1alpha2"
     kind: "DeschedulerPolicy"
-    strategies:
-      "RemoveDuplicates":
-        enabled: true
-      "RemovePodsViolatingInterPodAntiAffinity":
-        enabled: true
-      "RemovePodsViolatingNodeTaints":
-        enabled: true
-      "LowNodeUtilization":
-        enabled: true
-        params:
-          nodeResourceUtilizationThresholds:
+    profiles:
+      - name: Default
+        pluginConfig:
+        - name: "DefaultEvictor"
+          args:
+            evictLocalStoragePods: true
+        - name: "RemovePodsViolatingInterPodAntiAffinity"
+        - name: "RemovePodsViolatingNodeTaints"
+        - name: "RemoveDuplicates"
+        - name: "LowNodeUtilization"
+          args:
             thresholds:
               "cpu" : 20
               "memory": 20
@@ -27,3 +27,12 @@ data:
               "cpu" : 75
               "memory": 75
               "pods": 75
+        plugins:
+          balance:
+            enabled:
+              - "LowNodeUtilization"
+              - "RemoveDuplicates"
+          deschedule:
+            enabled:
+              - "RemovePodsViolatingInterPodAntiAffinity"
+              - "RemovePodsViolatingNodeTaints"

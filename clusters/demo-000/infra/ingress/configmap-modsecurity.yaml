@@ -1,0 +1,167 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: modsecurity-config
+data:
+  custom-modsecurity.conf: |    
+    # By default is DetectionOnly. Can be any of: DetectionOnly,On,Off
+    SecRuleEngine On
+
+    # Avoid sending status information about ModSecurity in response header
+    SecStatusEngine Off
+
+    # Send ModSecurity audit logs to the stdout (only for rejected requests)
+    SecAuditLog /dev/stdout
+    SecAuditLogFormat JSON
+    SecAuditEngine RelevantOnly # could be On/Off/RelevantOnly
+
+    # Enable scanning of the request body
+    SecRequestBodyAccess On
+
+    # Enable XML and JSON parsing
+    SecRule REQUEST_HEADERS:Content-Type "(?:application(?:/soap\+|/)|text/)xml" \
+      "id:'200000',phase:1,t:none,t:lowercase,pass,nolog,ctl:requestBodyProcessor=XML"
+    SecRule REQUEST_HEADERS:Content-Type "application/json" \
+      "id:'200001',phase:1,t:none,t:lowercase,pass,nolog,ctl:requestBodyProcessor=JSON"
+
+    # Max request sizes in bytes (with/without files) - Note NGINX Ingress has its own parameter/annotation that should be kept in sync
+    SecRequestBodyLimit 20971520 # 20Mb (default is 12.5Mb)
+    SecRequestBodyNoFilesLimit 262144 # 250Kb (default is 128Kb)
+    SecRequestBodyLimitAction ProcessPartial # Reject if larger (we could also let it pass with ProcessPartial)
+
+    # # Reject request if failed to parse request body
+    # SecRule REQBODY_ERROR "!@eq 0" \
+    #   "id:'200002', phase:2,t:none,log,deny,status:400,msg:'Failed to parse request body.',logdata:'%{reqbody_error_msg}',severity:2"
+
+    # recommended limits for regular expression recursion. See https://github.com/SpiderLabs/owasp-modsecurity-crs/issues/656#issuecomment-262780221
+    SecPcreMatchLimit 500000
+    SecPcreMatchLimitRecursion 500000    
+
+    # Include PUT/PATCH/DELETE in the allowed methods, otherwise those verbs will be rejected by rule 911100
+    SecAction "id:900200,phase:1,nolog,pass,t:none,\
+      setvar:tx.allowed_methods=GET HEAD POST OPTIONS PUT PATCH DELETE"
+
+    # Disable scanning of responses. Not the best place to stop an attack, and consumes a good deal of cpu/memory
+    SecResponseBodyAccess Off
+    SecResponseBodyLimitAction ProcessPartial
+
+    # Set paranoia level to 1 for OWASP CRS rules
+    # Can optionally set tx.executing_paranoia_level as per commented line, so we can test higher level rules (without blocking traffic)
+    SecAction \
+     "id:900000,\
+      phase:1,\
+      nolog,\
+      pass,\
+      t:none,\
+      setvar:tx.paranoia_level=1"
+    #SecAction \
+    #  "id:900001,\
+    #   phase:1,\
+    #   nolog,\
+    #   pass,\
+    #   t:none,\
+    #   setvar:tx.executing_paranoia_level=2"
+
+    # Block requests from known-malicious IPs using project honeypot, see https://www.projecthoneypot.org
+    # Blacklist key is retrieved by signing up and requesting in https://www.projecthoneypot.org/httpbl_configure.php
+    # Note search-engine crawlers are still enabled as per block_search_ip paramter
+    SecHttpBlKey xbwlpjhhmdbh
+    SecAction "id:900500,\
+      phase:1,\
+      nolog,\
+      pass,\
+      t:none,\
+      setvar:tx.block_search_ip=0,\
+      setvar:tx.block_suspicious_ip=1,\
+      setvar:tx.block_harvester_ip=1,\
+      setvar:tx.block_spammer_ip=1"
+
+    ##################################
+    # False positives
+    ##################################
+    # Disable 20004 as its known for false positives, see https://github.com/SpiderLabs/owasp-modsecurity-crs/issues/827#issuecomment-311859317
+    SecRuleRemoveById 200004
+
+    # We really want to remove the following rule as it keeps firing with requests coming from localhost
+    # in k8s. See for example https://github.com/SpiderLabs/owasp-modsecurity-crs/issues/1566
+    SecRuleRemoveById 920350
+
+    # Default implementation of multipart image upload in Spring Boot causes this to fire and point to 
+    # deprecation notice in RFC 7578
+    SecRuleRemoveById 922110
+    SecRuleRemoveById 922120
+
+    # False-positive fires during regex over certificate data content
+    SecRuleRemoveById 932115
+
+    ##################################
+    # Additional rules
+    ##################################
+
+    # Extend 932130 to better protect against CVE-2021-44228 (Log4j / Log4Shell)
+    SecRuleUpdateTargetById 932130 "REQUEST_HEADERS"
+
+    # Generic rule against CVE-2021-44228 (Log4j / Log4Shell), not yet released in CRS 3.3.2
+    # See https://coreruleset.org/20211213/crs-and-log4j-log4shell-cve-2021-44228/
+    SecRule REQUEST_LINE|ARGS|ARGS_NAMES|REQUEST_COOKIES|REQUEST_COOKIES_NAMES|REQUEST_HEADERS|XML://*|XML://@* "@rx (?:\${[^}]{0,4}\${|\${(?:jndi|ctx))" \
+      "id:1005,\
+      phase:2,\
+      block,\
+      t:none,t:urlDecodeUni,t:cmdline,\
+      log,\
+      msg:'Potential Remote Command Execution: Log4j CVE-2021-44228', \
+      tag:'application-multi',\
+      tag:'language-java',\
+      tag:'platform-multi',\
+      tag:'attack-rce',\
+      tag:'OWASP_CRS',\
+      tag:'capec/1000/152/137/6',\
+      tag:'PCI/6.5.2',\
+      tag:'paranoia-level/1',\
+      ver:'OWASP_CRS/3.4.0-dev',\
+      severity:'CRITICAL',\
+      setvar:'tx.rce_score=+%{tx.critical_anomaly_score}',\
+      setvar:'tx.anomaly_score_pl1=+%{tx.critical_anomaly_score}'"
+
+    # Spring framework remote execution (not yet released in CRS 3.3.2). This rule is also triggered by the following exploit(s):
+    # - https://www.rapid7.com/blog/post/2022/03/30/spring4shell-zero-day-vulnerability-in-spring-framework/
+    # - https://www.ironcastle.net/possible-new-java-spring-framework-vulnerability-wed-mar-30th/
+    #
+    SecRule ARGS|ARGS_NAMES|REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|REQUEST_COOKIES_NAMES|REQUEST_BODY|REQUEST_HEADERS|XML:/*|XML://@* \
+      "@rx (?:class\.module\.classLoader\.resources\.context\.parent\.pipeline|springframework\.context\.support\.FileSystemXmlApplicationContext)" \
+      "id:1006,\
+      phase:2,\
+      block,\
+      t:urlDecodeUni,\
+      msg:'Remote Command Execution: Malicious class-loading payload',\
+      logdata:'Matched Data: %{MATCHED_VAR} found within %{MATCHED_VAR_NAME}',\
+      tag:'application-multi',\
+      tag:'language-java',\
+      tag:'platform-multi',\
+      tag:'attack-rce',\
+      tag:'OWASP_CRS',\
+      tag:'capec/1000/152/248',\
+      tag:'PCI/6.5.2',\
+      tag:'paranoia-level/2',\
+      ver:'OWASP_CRS/3.4.0-dev',\
+      severity:'CRITICAL',\
+      setvar:'tx.rce_score=+%{tx.critical_anomaly_score}',\
+      setvar:'tx.anomaly_score_pl2=+%{tx.critical_anomaly_score}'"
+    
+    # Valid "invalid" requests from QA tests
+    # Example: "uri":"/auth/user/username/exists?value=QA%201464712696","body":"{}"
+    SecRule REQUEST_URI "@beginsWith /auth/user/username/exists?value=" \
+      "id:1007,phase:2,t:none,allow,nolog,chain"
+      SecRule REQUEST_BODY_LENGTH "@eq 2" "t:none"
+
+    # Bypass /actuator/health endpoints
+    SecRule REQUEST_URI "@beginsWith /actuator/health" \
+      "id:1008,phase:2,t:none,allow,nolog"
+
+    SecRule REQUEST_HEADERS:Host "@rx ^(music\.exscape\.io|zouglou\.pulsestream\.app|play\.pulsemusic\.com)$" \
+      "id:1009,phase:1,chain,allow"
+      SecRule REQUEST_URI "^/(api|metaverse-rooms|omp|auth)"
+
+    SecRule REQUEST_HEADERS:Host "@rx ^(beta\.exscape\.io)$" \
+      "id:1010,phase:1,chain,allow"
+      SecRule REQUEST_URI "^/wp-admin"

@@ -1,5 +1,5 @@
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
   name: prometheus-blackbox-exporter
@@ -12,7 +12,7 @@ spec:
         kind: HelmRepository
         name: prometheus-community
         namespace: flux-system
-      version: '7.0.0'
+      version: '>=8.12.0 <9.0.0'
   interval: 1h0m0s
   timeout: 10m
   install:
@@ -24,6 +24,14 @@ spec:
       retries: 3
     crds: CreateReplace
   values:
+    extraArgs:
+      - --log.level=debug
+    tolerations:
+      - key: node-role.kubernetes.io/master   # we put observability stack on controlplane nodes to utilize their resources
+        operator: Exists
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+    pspEnabled: false
     config:
       modules:
         http_2xx:
@@ -42,3 +50,13 @@ spec:
             preferred_ip_protocol: "ip4"
             tls_config:
               insecure_skip_verify: true
+        dns_external:
+          prober: dns
+          timeout: 5s
+          dns:
+            transport_protocol: "udp"
+            preferred_ip_protocol: "ip4"
+            query_name: "www.google.com"
+            query_type: "A"
+            valid_rcodes:
+              - NOERROR

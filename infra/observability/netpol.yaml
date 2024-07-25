@@ -1,12 +1,12 @@
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
   name: default-namespace-network-policies
 spec:
   chart:
     spec:
-      chart: ./charts/security/default-namespace-network-policies
+      chart: ./helm/charts/security/default-namespace-network-policies
       sourceRef:
         kind: GitRepository
         name: flux-system
@@ -33,54 +33,3 @@ spec:
     allow_internet: false
     allow_ingress_traffic: true
     allow_egress_traffic: false
-
-# Allow Grafana to contact external servers (plugins, auth, etc.)
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-egress-grafana
-spec:
-  egress:
-  - ports:
-    - port: 443
-      protocol: TCP
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: grafana
-  policyTypes:
-  - Egress
-
-# Allow Alertmanager to contact external servers (slack)
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-egress-alertmanager
-spec:
-  egress:
-  - ports:
-    - port: 443
-      protocol: TCP
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: alertmanager
-  policyTypes:
-  - Egress
-
-# Allow Blackbox Exporter to probe external URLs.
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-egress-blackbox-exporter
-spec:
-  egress:
-  - ports:
-    - port: 443
-      protocol: TCP
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: prometheus-blackbox-exporter
-  policyTypes:
-  - Egress

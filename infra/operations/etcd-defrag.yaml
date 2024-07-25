@@ -1,0 +1,69 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  labels:
+    app: etcd-defrag
+  name: etcd-defrag
+  namespace: kube-system
+spec:
+  failedJobsHistoryLimit: 1
+  schedule: 30 01,11 * * *
+  jobTemplate:
+    metadata:
+      labels:
+        app: etcd-defrag
+      name: etcd-defrag
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app: etcd-defrag
+        spec:
+          containers:
+          - command:
+            - /bin/sh
+            - -c
+            - |
+              etcdctl \
+                --cacert=/etc/ssl/etcd/ssl/ca.pem \
+                --cert=/etc/ssl/etcd/ssl/admin-${NODE_NAME}.pem \
+                --key=/etc/ssl/etcd/ssl/admin-${NODE_NAME}-key.pem \
+                defrag --cluster
+            env:
+            - name: ETCDCTL_API
+              value: "3"
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            image: quay.io/coreos/etcd:v3.5.6
+            name: etcd-defrag
+            resources: {}
+            securityContext:
+              allowPrivilegeEscalation: true
+              capabilities:
+                drop:
+                - ALL
+              privileged: true
+              runAsUser: 0
+            volumeMounts:
+            - mountPath: /etc/ssl/etcd/ssl
+              name: etcd-certs
+              readOnly: true
+          hostNetwork: true
+          restartPolicy: OnFailure
+          securityContext:
+            fsGroup: 2000
+            runAsNonRoot: false
+            seccompProfile:
+              type: RuntimeDefault
+          tolerations:
+          - key: node-role.kubernetes.io/control-plane
+            operator: Exists
+          volumes:
+          - name: etcd-certs
+            hostPath:
+              path: /etc/ssl/etcd/ssl
+              type: DirectoryOrCreate

@@ -25,38 +25,40 @@ spec:
   values:
     controller:
       kind: DaemonSet
-      image:
-        chroot: true
       hostPort:
         enabled: true
       service:
         type: ClusterIP
       ingressClassResource:
-        name: nginx
-        default: true
+        name: nginx-dev
+        default: false
+        controllerValue: "k8s.io/ingress-nginx-dev"
       ingressClassByName: true
-      watchIngressWithoutClass: true
-      ingressClass: nginx   # backwards compatibility
+      ingressClass: nginx-dev   # backwards compatibility
       config:
         enable-real-ip: "true"   # to reveal source ip properly
         forwarded-for-header: proxy_protocol   # to reveal source ip properly
+        # modsecurity
+        enable-modsecurity: "false"
+        enable-owasp-modsecurity-crs: "false"
+        http-snippet: |
+          proxy_cache_path /tmp/nginx_cache levels=1:2 keys_zone=static-cache:10m max_size=30g inactive=24h use_temp_path=off;
+        modsecurity-snippet: |
+          # Increment this to force nginx to reload the rules when you change the configmap: 1.0.1
+          Include /etc/nginx/owasp-modsecurity-crs/custom/custom-modsecurity.conf
       extraArgs:
         enable-ssl-passthrough: true
-      # Tuning performance
-      # https://kubernetes.github.io/ingress-nginx/examples/customization/sysctl/
-      extraInitContainers:
-      - name: sysctl
-        image: alpine:3
-        securityContext:
-          privileged: true
-        command: ["sh", "-c", "sysctl -w net.core.somaxconn=32768; sysctl -w net.ipv4.ip_local_port_range='1024 65000'"]
-      allowSnippetAnnotations: false   # CVE-2021-25742
+      allowSnippetAnnotations: true
       admissionWebhooks:
         enabled: false
-      metrics:
-        enabled: true
-        serviceMonitor:
-          enabled: true
+      # this block is for modsecurity
+      extraVolumeMounts:
+        - name: modsecurity-config
+          mountPath: /etc/nginx/owasp-modsecurity-crs/custom/
+      extraVolumes:
+        - name: modsecurity-config
+          configMap:
+            name: modsecurity-config
       nodeSelector:
         dedicated: prod
       tolerations:

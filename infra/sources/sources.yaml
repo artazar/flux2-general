@@ -1,0 +1,200 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: HelmRepository
+metadata:
+  name: bitnami
+spec:
+  interval: 120m
+  url: https://charts.bitnami.com/bitnami
+
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: HelmRepository
+metadata:
+  name: emberstack
+spec:
+  interval: 120m
+  url: https://emberstack.github.io/helm-charts
+
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: HelmRepository
+metadata:
+  name: falco
+spec:
+  interval: 120m
+  url: https://falcosecurity.github.io/charts
+
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: HelmRepository
+metadata:
+  name: grafana
+spec:
+  interval: 120m
+  url: https://grafana.github.io/helm-charts
+
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: HelmRepository
+metadata:
+  name: ingress-nginx
+spec:
+  interval: 120m
+  url: https://kubernetes.github.io/ingress-nginx
+
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: HelmRepository
+metadata:
+  name: jenkins
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  url: https://charts.jenkins.io
+
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: HelmRepository
+metadata:
+  name: jetstack
+  namespace: flux-system
+spec:
+  interval: 1h0m0s
+  url: https://charts.jetstack.io
+
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: HelmRepository
+metadata:
+  name: juicefs
+spec:
+  interval: 120m
+  url: https://juicedata.github.io/charts/
+
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: HelmRepository
+metadata:
+  name: kubelet-csr-approver
+spec:
+  interval: 120m
+  url: https://postfinance.github.io/kubelet-csr-approver
+
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: HelmRepository
+metadata:
+  name: kyverno
+spec:
+  interval: 120m
+  url: https://kyverno.github.io/kyverno/
+
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: HelmRepository
+metadata:
+  name: mittwald
+spec:
+  interval: 120m
+  url: https://helm.mittwald.de
+
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: HelmRepository
+metadata:
+  name: prometheus-community
+spec:
+  interval: 120m
+  url: https://prometheus-community.github.io/helm-charts
+
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: HelmRepository
+metadata:
+  name: sealed-secrets
+spec:
+  interval: 1h0m0s
+  url: https://bitnami-labs.github.io/sealed-secrets
+
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: HelmRepository
+metadata:
+  name: teleport
+spec:
+  interval: 120m
+  url: https://charts.releases.teleport.dev
+
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: HelmRepository
+metadata:
+  name: victoriametrics
+spec:
+  interval: 120m
+  url: https://victoriametrics.github.io/helm-charts
+
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: HelmRepository
+metadata:
+  name: rocketchat
+spec:
+  interval: 120m
+  url: https://rocketchat.github.io/helm-charts
+
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: HelmRepository
+metadata:
+  name: sonarqube
+spec:
+  interval: 120m
+  url: https://SonarSource.github.io/helm-chart-sonarqube
+
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: HelmRepository
+metadata:
+  name: cloudnative-pg
+spec:
+  interval: 120m
+  url: https://cloudnative-pg.github.io/charts
+
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: bank-vaults
+spec:
+  interval: 120m
+  type: oci
+  url: oci://ghcr.io/bank-vaults/helm-charts
+
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: HelmRepository
+metadata:
+  name: vmware-tanzu
+spec:
+  interval: 120m
+  url: https://vmware-tanzu.github.io/helm-charts
+
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: HelmRepository
+metadata:
+  name: cilium
+spec:
+  interval: 120m
+  url: https://helm.cilium.io/
+
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: HelmRepository
+metadata:
+  name: gitea
+spec:
+  interval: 120m
+  url: https://dl.gitea.com/charts/

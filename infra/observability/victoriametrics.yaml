@@ -1,5 +1,5 @@
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
   name: victoriametrics
@@ -12,7 +12,7 @@ spec:
         kind: HelmRepository
         name: victoriametrics
         namespace: flux-system
-      version: '0.8.0'
+      version: '>=0.8.22 <1.0.0'
   interval: 1h0m0s
   timeout: 10m
   install:
@@ -24,6 +24,16 @@ spec:
       retries: 3
     crds: CreateReplace
   values:
+    rbac:
+      pspEnabled: false   # deprecated
     server:
       fullnameOverride: victoriametrics
-      retentionPeriod: 12
+      retentionPeriod: 1
+      tolerations:
+      - key: node-role.kubernetes.io/master   # we put observability stack on controlplane nodes to utilize their resources
+        operator: Exists
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+      persistentVolume:
+        storageClass: local-path
+        size: 200Gi   # with local-path the size is not actually treated, but we put it here to show how we estimate data usage

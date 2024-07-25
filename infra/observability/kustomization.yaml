@@ -5,6 +5,8 @@ resources:
   - namespace.yaml
   - netpol.yaml
   - alerts
-  - victoriametrics.yaml
+  - goldpinger.yaml
+  - loki.yaml
   - kube-prometheus-stack.yaml
-  # - loki.yaml   # loki values should be adjusted to get enabled
+  - blackbox-exporter.yaml
+  - victoriametrics.yaml

@@ -1,9 +1,8 @@
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
   name: loki
-  namespace: observability
 spec:
   chart:
     spec:
@@ -12,7 +11,7 @@ spec:
         kind: HelmRepository
         name: grafana
         namespace: flux-system
-      version: '>=2.11.0 <2.12.0'
+      version: '>=6.7.1 <7.0.0'
   interval: 1h0m0s
   timeout: 10m
   install:
@@ -24,46 +23,44 @@ spec:
       retries: 3
     crds: CreateReplace
   values:
-    config:
-      compactor:
-        working_directory: /data/loki/retention
-        shared_store: aws
-        compaction_interval: 60m
-        retention_enabled: true
+    deploymentMode: SingleBinary
+    singleBinary:
+      replicas: 1
+      extraVolumes:
+        - name: rules
+          configMap:
+            name: loki-alerting-rules
+        - name: data
+          emptyDir: {}
+      extraVolumeMounts:
+        - name: rules
+          mountPath: /rules/fake
+        - name: data
+          mountPath: /var/loki
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+    loki:
+      auth_enabled: false
       limits_config:
         retention_period: 720h
-      chunk_store_config:
-        max_look_back_period: 720h
-      schema_config:
+      storage:
+        type: 'filesystem'
+      schemaConfig:
         configs:
-          - from: "2020-11-13"
-            store: boltdb-shipper
-            object_store: aws
-            schema: v11
-            index:
-              prefix: index_
-              period: 24h
-      storage_config:
-        boltdb_shipper:
-          active_index_directory: /data/loki/index
-          cache_location: /data/loki/index_cache
-          cache_ttl: 24h
-          resync_interval: 1m
-          shared_store: s3
-        aws:
-          s3: https://minio.minio-infra.svc.cluster.local
-          s3forcepathstyle: true
-          bucketnames: loki-logs-storage
-          access_key_id: ${MINIO_ACCESS_KEY}
-          secret_access_key: ${MINIO_SECRET_KEY}
-          http_config:
-            ca_file: /tmp/ca-certs/ca.crt
-      ruler:
+        - from: "2024-01-01"
+          store: tsdb
+          index:
+            prefix: loki_index_
+            period: 24h
+          object_store: filesystem # we're storing on filesystem so there's no real persistence here.
+          schema: v13
+      rulerConfig:
         storage:
           type: local
           local:
             directory: /rules
-        rule_path: /tmp/scratch
+        rule_path: /tmp/rules
         alertmanager_url: http://alertmanager-operated:9093
         ring:
           kvstore:
@@ -71,45 +68,66 @@ spec:
         enable_api: true
       analytics:
         reporting_enabled: false
-    alerting_groups:
-      - name: log-alerts
-        rules:
-          - alert: HighLogRate
-            expr: |
-              sum by (app, namespace)
-                (rate({namespace=~".*"}[1m]))
-                > 5000
-            for: 1m
-            labels:
-              severity: high
-            annotations:
-              summary: "High LogRate Alert for {{ $labels.app }}, current rate is {{ printf \"%.0f\" $value }}/min"
-          - alert: HighErrorRate
-            expr: |
-              sum by (app, namespace)
-                (rate({namespace=~".*"} |= "ERROR" [1m]))
-                > 100
-            for: 1m
-            labels:
-              severity: critical
-            annotations:
-              summary: "High ErrorRate Alert for {{ $labels.app }}, current rate is {{ printf \"%.0f\" $value }}/min"
-          - alert: URLCredentialsLeakedProd
-            annotations:
-              message: "{{ $labels.job }} is leaking http basic auth credentials."
-            expr: 'sum by (cluster, job, pod) (count_over_time({namespace=~".*"}|~ "://(\\w+):.*@.*:(\\d+)" [5m]) > 0)'
-            for: 10m
-            labels:
-              severity: high
-    serviceMonitor:
-      enabled: true
+    gateway:
+      enabled: false
+    monitoring:
+      dashboards:
+        enabled: false
+      selfMonitoring:
+        enabled: false
+        grafanaAgent:
+          installOperator: false
+      lokiCanary:
+        enabled: false
+      serviceMonitor:
+        enabled: true
+    test:
+      enabled: false
+
+# extra alerting rules defined manually and mounted via extraVolumes
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loki-alerting-rules
+data:
+  loki-alerting-rules.yaml: |-
+    groups:
+    - name: application
+      rules:
+        - alert: HighLogRateProd
+          expr: |
+            sum by (app, namespace)
+              (rate({namespace="prod"}[1m]))
+              > 500
+          for: 1m
+          labels:
+            severity: high
+          annotations:
+            summary: "High LogRate Alert for {{ $labels.app }}, current rate is {{ printf \"%.0f\" $value }}/min"
+        - alert: HighErrorRateProd
+          expr: |
+            sum by (app, namespace)
+              (rate({namespace="prod"} |= "ERROR" [1m]))
+              > 10
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "High ErrorRate Alert for {{ $labels.app }}, current rate is {{ printf \"%.0f\" $value }}/min"
+        - alert: URLCredentialsLeakedProd
+          annotations:
+            message: "{{ $labels.job }} is leaking http basic auth credentials."
+          expr: 'sum by (cluster, job, pod) (count_over_time({namespace="prod"}|~ "://(\\w+):.*@.*:(\\d+)" [5m]) > 0)'
+          for: 10m
+          labels:
+            severity: high
 
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
   name: promtail
-  namespace: observability
 spec:
   chart:
     spec:
@@ -118,7 +136,7 @@ spec:
         kind: HelmRepository
         name: grafana
         namespace: flux-system
-      version: '>=4.2.0 <5.0.0'
+      version: '>=6.16.4 <7.0.0'
   interval: 1h0m0s
   timeout: 10m
   install:
@@ -130,17 +148,61 @@ spec:
       retries: 3
     crds: CreateReplace
   values:
-    extraArgs:
-      - "-config.expand-env=true"
     config:
-      lokiAddress: http://loki-headless:3100/loki/api/v1/push
+      clients:
+        - url: http://loki-headless:3100/loki/api/v1/push
       snippets:
         pipelineStages:
-          - multiline:
-              # Identify timestamps as first line of a multiline block for Spring Boot default logging.
-              firstline: '^\d{4}-\d{2}-\d{2}\s\d{1,2}:\d{2}:\d{2}\.d{3}'
-              max_wait_time: 3s
+          # parse containerd format first
+          - cri: {}
+
+          # drop all unnecessary logs
+          - match:
+              selector: '{namespace=~"juicefs.*"} |~ ".*(Sending probe request|Health check succeeded).*"'
+              action: drop
+              drop_counter_reason: juicefs_unneeded_health_check_logs
+          - match:
+              selector: '{namespace=~"direct-csi.*"} |~ ".*Connecting to unix:///csi/csi.sock.*"'
+              action: drop
+              drop_counter_reason: directcsi_unneeded_health_check_logs
+          # parse tomcat access logs
+          - match:
+              selector: '{namespace="prod", kind="spring-boot"} |~ "^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}.*$"'
+              stages:
+              - regex: 
+                  expression: "^(?P<source_ip>(?:[0-9]{1,3}\\.){3}[0-9]{1,3}) - - \\[.*\\] \\\"(?P<http_method>(?:GET|POST|DELETE|PUT|PATCH|HEAD)).*\\\" (?P<http_status_code>[1-5][0-9][0-9]) (?P<bytes_sent>.*)$"
+              - labels:
+                  source_ip:
+                  http_method:
+                  http_path:
+                  http_status_code:
+                  bytes_sent:
+          # wrap java stack traces, here we exclude access logs by empty source_ip, so they don't get inside multiline block
+          - match:
+              selector: '{namespace="prod", kind="spring-boot", source_ip=""}'
+              stages:
+                - multiline:
+                    firstline: ^\d{4}-\d{2}-\d{2}
+          # parse spring boot logs
+          - match:
+              selector: '{namespace="prod", kind="spring-boot"} |~ "^\\d{4}-\\d{2}-\\d{2}.*"'
+              stages:
+              - regex: 
+                  expression: "^\\d{4}-\\d{2}-\\d{2}\\s\\d{1,2}:\\d{2}:\\d{2}(?:\\.\\d{3})?\\s+(?P<log_level>[A-Z]+)\\s+\\d+\\s+---\\s+\\[(?:\\s+)?(?:\\-+)?(?P<thread>.*)(?:\\s+)?\\]\\s+(?P<controller>[^\\s\\\\]+)\\s+\\:\\s(?P<message>.*)$"
+              - labels:
+                  log_level:
+                  thread:
+                  controller:
+
+        extraRelabelConfigs:
+          # keep all kubernetes labels
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+
     defaultVolumes:
+      - name: run
+        hostPath:
+          path: /run/promtail
       - name: containers
         hostPath:
           path: /var/lib/docker/containers
@@ -148,6 +210,8 @@ spec:
         hostPath:
           path: /var/log
     defaultVolumeMounts:
+      - name: run
+        mountPath: /run/promtail
       - name: containers
         mountPath: /var/lib/docker/containers
         readOnly: true

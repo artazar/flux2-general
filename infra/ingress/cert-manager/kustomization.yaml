@@ -3,5 +3,4 @@ kind: Kustomization
 namespace: ingress
 resources:
   - cert-manager.yaml
-  - letsencrypt-issuer.yaml
   - ca.yaml

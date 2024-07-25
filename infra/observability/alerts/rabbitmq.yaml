@@ -1,0 +1,56 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: awesome-prometheus-rules-rabbitmq
+spec:
+  groups:
+  - name: rabbitmq.rules
+    rules:
+    - alert: RabbitMQMemoryHigh
+      expr: rabbitmq_alarms_memory_used_watermark > 0
+      for: 15m
+      labels:
+        severity: warning
+      annotations:
+        summary: RabbitMQ high memory usage in {{ $labels.namespace }} namespace for {{ $labels.service }} instance
+        description: "Used high memory watermark is exceeded\n  LABELS = {{ $labels }}"
+    - alert: RabbitMQDiskSpaceLow
+      expr: rabbitmq_alarms_free_disk_space_watermark > 0
+      for: 15m
+      labels:
+        severity: warning
+      annotations:
+        summary: RabbitMQ low disk space in {{ $labels.namespace }} namespace for {{ $labels.service }} instance
+        description: "Low disk space watermark is exceeded\n  LABELS = {{ $labels }}"
+    - alert: RabbitMQDiskSpaceLow
+      expr: rabbitmq_alarms_file_descriptor_limit > 0
+      for: 15m
+      labels:
+        severity: warning
+      annotations:
+        summary: RabbitMQ too many file descriptors {{ $labels.namespace }} namespace for {{ $labels.service }} instance
+        description: "FD limit watermark is exceeded\n  LABELS = {{ $labels }}"
+    - alert: RabbitMQTooManyUnackMessages
+      expr: sum(rabbitmq_detailed_queue_messages_unacked) BY (namespace, service, queue) > 10
+      for: 1m
+      labels:
+        severity: warning
+      annotations:
+        summary: Too many unacked messages in {{ $labels.namespace }} namespace for {{ $labels.service }} instance and {{ $labels.queue }} queue
+        description: "Amount of messages:\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+    - alert: RabbitMQTooManyConnections
+      expr: rabbitmq_connections > 1000
+      for: 15m
+      labels:
+        severity: warning
+      annotations:
+        summary: RabbitMQ too many connections in {{ $labels.namespace }} namespace for {{ $labels.service }} instance
+        description: "The total connections of a node is too high\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+    - alert: RabbitMQUnroutableMessages
+      expr: increase(rabbitmq_channel_messages_unroutable_returned_total[1m]) > 0 or increase(rabbitmq_channel_messages_unroutable_dropped_total[1m]) > 0 or increase(rabbitmq_global_messages_unroutable_returned_total[1m]) > 0 or increase(rabbitmq_global_messages_unroutable_dropped_total[1m]) > 0
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: RabbitMQ unroutable messages in {{ $labels.namespace }} namespace for {{ $labels.service }} instance
+        description: "A queue has unroutable messages\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"

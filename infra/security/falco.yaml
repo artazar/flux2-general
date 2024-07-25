@@ -1,5 +1,5 @@
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
   name: falco
@@ -11,7 +11,7 @@ spec:
         kind: HelmRepository
         name: falco
         namespace: flux-system
-      version: '>=2.0.2 <2.1.0'
+      version: '>=4.2.2 <5.0.0'
   interval: 1h0m0s
   releaseName: falco
   timeout: 60m
@@ -24,48 +24,80 @@ spec:
       retries: 3
     crds: CreateReplace
   values:
-    priorityClassName: system-cluster-critical
+    podPriorityClassName: system-cluster-critical
     # https://github.com/falcosecurity/charts/tree/falco-2.0.2/falco#daemonset
+    controller:
+      kind: daemonset
     driver:
       enabled: true
-      kind: ebpf
+      kind: modern_ebpf
     # https://github.com/falcosecurity/charts/tree/master/falco#enabling-grpc
+    collectors:
+      kubernetes:
+        enabled: true
+        tolerations:
+          - key: node-role.kubernetes.io/control-plane
+            operator: Exists
     falco:
       grpc:
         enabled: true
         unixSocketPath: "unix:///var/run/falco/falco.sock"
         threadiness: 8
-      grpcOutput:
+      grpc_output:
         enabled: true
-      rules_file:
+      rules_file:   # order matters
         - /etc/falco/falco_rules.yaml
         - /etc/falco/falco_rules.local.yaml
+        - /etc/falco/falco-incubating_rules.yaml
+        - /etc/falco/falco-sandbox_rules.yaml
         - /etc/falco/k8s_audit_rules.yaml
         - /etc/falco/rules.d
       plugins:
         - name: k8saudit
           library_path: libk8saudit.so
           init_config:
-            ""
-            # maxEventBytes: 1048576
+            maxEventBytes: 1048576
+            useAsync: false   # https://github.com/falcosecurity/falco/issues/2475#issuecomment-1502903061
             # sslCertificate: /etc/falco/falco.pem
           open_params: "http://:9765/k8s-audit"
         - name: json
           library_path: libjson.so
           init_config: ""
       load_plugins: [k8saudit, json]
+    falcoctl:
+      artifact:
+        install:
+          # -- Enable the init container.
+          enabled: true
+        follow:
+          # -- Enable the sidecar container.
+          enabled: true
+      config:
+        artifact:
+          install:
+            refs:
+              - falco-rules:3
+              - falco-incubating-rules:3
+              - falco-sandbox-rules:3
+              - k8saudit-rules:0.7
+          follow:
+            refs:
+              - falco-rules:3
+              - falco-incubating-rules:3
+              - falco-sandbox-rules:3
+              - k8saudit-rules:0.7
     services:
       - name: k8saudit-webhook
         type: NodePort
         ports:
           - port: 9765 # See plugin open_params
-            nodePort: 32765
+            nodePort: 32765 # This port is used by k8s apiserver audit webhook
             protocol: TCP
     tolerations:
     - operator: Exists   # run on all nodes in cluster
 
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
   name: falco-exporter
@@ -80,7 +112,7 @@ spec:
       version: '>=0.8.0 <1.0.0'
   interval: 1h0m0s
   releaseName: falco-exporter
-  timeout: 10m
+  timeout: 60m
   install:
     remediation:
       retries: 3

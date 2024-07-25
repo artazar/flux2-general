@@ -21,4 +21,12 @@ spec:
         severity: warning
       annotations:
         summary: Minio disk space usage (instance {{ $labels.instance }})
-        description: 'Minio available free space is low (< 10%)\n  VALUE = {{ $value | printf "%.2f" }}'
+        description: 'Minio available free space is low (< 10%), VALUE = {{ $value | printf "%.2f" }}'
+    - alert: MinioEventsQueuePressure
+      expr: max by (target_id, target_name) (minio_notify_target_queue_length) > 0
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: Minio fails to publish events
+        description: 'Minio {{ $labels.target_name }} event notification for {{ $labels.target_id }} fails to get delivered. Current count of events in queue = {{ $value | printf "%.2f" }}'

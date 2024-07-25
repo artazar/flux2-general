@@ -1,12 +1,12 @@
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
   name: default-namespace-network-policies
 spec:
   chart:
     spec:
-      chart: ./charts/security/default-namespace-network-policies
+      chart: ./helm/charts/security/default-namespace-network-policies
       sourceRef:
         kind: GitRepository
         name: flux-system
@@ -45,8 +45,28 @@ spec:
   - ports:
     - port: 443
       protocol: TCP
+    - port: 45000   # falco k8s meta collector
+      protocol: TCP
   podSelector:
     matchLabels:
-      app: falco
+      app.kubernetes.io/name: falco
+  policyTypes:
+  - Egress
+
+# Allow Kyverno to contact external servers (attesting ghcr images)
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-egress-kyverno
+spec:
+  egress:
+  - ports:
+    - port: 443
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: admission-controller
+      app.kubernetes.io/instance: kyverno
   policyTypes:
   - Egress

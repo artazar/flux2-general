@@ -19,7 +19,7 @@ spec:
       serviceAccountName: descheduler-sa
       containers:
         - name: descheduler
-          image: k8s.gcr.io/descheduler/descheduler:v0.24.0
+          image: registry.k8s.io/descheduler/descheduler:v0.29.0
           imagePullPolicy: IfNotPresent
           command:
             - "/bin/descheduler"
@@ -58,6 +58,8 @@ spec:
               name: policy-volume
       tolerations:
         - key: node-role.kubernetes.io/master   # we put observability stack on controlplane nodes to utilize their resources
+          operator: Exists
+        - key: node-role.kubernetes.io/control-plane
           operator: Exists
       volumes:
       - name: policy-volume
