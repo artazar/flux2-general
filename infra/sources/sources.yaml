@@ -1,5 +1,5 @@
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta1
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: bitnami
@@ -8,7 +8,17 @@ spec:
   url: https://charts.bitnami.com/bitnami
 
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta1
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: bitnami-oci
+spec:
+  type: "oci"
+  interval: 120m
+  url: oci://registry-1.docker.io/bitnamicharts
+
+---
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: emberstack
@@ -17,7 +27,7 @@ spec:
   url: https://emberstack.github.io/helm-charts
 
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta1
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: falco
@@ -26,7 +36,7 @@ spec:
   url: https://falcosecurity.github.io/charts
 
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta1
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: grafana
@@ -35,7 +45,7 @@ spec:
   url: https://grafana.github.io/helm-charts
 
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta1
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: ingress-nginx
@@ -44,7 +54,7 @@ spec:
   url: https://kubernetes.github.io/ingress-nginx
 
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta1
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: jenkins
@@ -54,7 +64,7 @@ spec:
   url: https://charts.jenkins.io
 
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta1
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: jetstack
@@ -64,7 +74,7 @@ spec:
   url: https://charts.jetstack.io
 
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta1
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: juicefs
@@ -73,7 +83,7 @@ spec:
   url: https://juicedata.github.io/charts/
 
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta1
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: kubelet-csr-approver
@@ -82,7 +92,7 @@ spec:
   url: https://postfinance.github.io/kubelet-csr-approver
 
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta1
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: kyverno
@@ -91,7 +101,7 @@ spec:
   url: https://kyverno.github.io/kyverno/
 
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta1
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: mittwald
@@ -100,7 +110,7 @@ spec:
   url: https://helm.mittwald.de
 
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta1
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: prometheus-community
@@ -109,7 +119,7 @@ spec:
   url: https://prometheus-community.github.io/helm-charts
 
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta1
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: sealed-secrets
@@ -118,7 +128,7 @@ spec:
   url: https://bitnami-labs.github.io/sealed-secrets
 
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta1
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: teleport
@@ -127,7 +137,7 @@ spec:
   url: https://charts.releases.teleport.dev
 
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta1
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: victoriametrics
@@ -136,7 +146,7 @@ spec:
   url: https://victoriametrics.github.io/helm-charts
 
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta1
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: rocketchat
@@ -145,7 +155,7 @@ spec:
   url: https://rocketchat.github.io/helm-charts
 
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta1
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: sonarqube
@@ -154,7 +164,7 @@ spec:
   url: https://SonarSource.github.io/helm-chart-sonarqube
 
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta1
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: cloudnative-pg
@@ -173,7 +183,7 @@ spec:
   url: oci://ghcr.io/bank-vaults/helm-charts
 
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta1
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: vmware-tanzu
@@ -182,7 +192,7 @@ spec:
   url: https://vmware-tanzu.github.io/helm-charts
 
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta1
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: cilium
@@ -191,7 +201,7 @@ spec:
   url: https://helm.cilium.io/
 
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta1
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: gitea

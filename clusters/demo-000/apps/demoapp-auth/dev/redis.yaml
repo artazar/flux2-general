@@ -10,7 +10,7 @@ spec:
       chart: redis
       sourceRef:
         kind: HelmRepository
-        name: bitnami
+        name: bitnami-oci
         namespace: flux-system
       version: ">=16.6.0 <17.0.0"
   interval: 1h0m0s
