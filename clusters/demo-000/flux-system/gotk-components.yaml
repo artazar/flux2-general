@@ -4622,6 +4622,8 @@ spec:
       tolerations:
       - key: node-role.kubernetes.io/master
         operator: Exists
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
       volumes:
       - emptyDir: {}
         name: data
@@ -6490,6 +6492,8 @@ spec:
       terminationGracePeriodSeconds: 60
       tolerations:
       - key: node-role.kubernetes.io/master
+        operator: Exists
+      - key: node-role.kubernetes.io/control-plane
         operator: Exists
       volumes:
       - emptyDir: {}
@@ -10354,6 +10358,8 @@ spec:
       tolerations:
       - key: node-role.kubernetes.io/master
         operator: Exists
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
       volumes:
       - emptyDir: {}
         name: temp
@@ -12391,6 +12397,8 @@ spec:
       terminationGracePeriodSeconds: 10
       tolerations:
       - key: node-role.kubernetes.io/master
+        operator: Exists
+      - key: node-role.kubernetes.io/control-plane
         operator: Exists
       volumes:
       - emptyDir: {}
