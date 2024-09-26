@@ -11,7 +11,7 @@ resources:
   - https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.72.0/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
   - https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.72.0/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
   ### source: https://cert-manager.io/docs/installation/helm/
-  - https://github.com/cert-manager/cert-manager/releases/download/v1.14.4/cert-manager.crds.yaml
+  - https://github.com/cert-manager/cert-manager/releases/download/v1.15.3/cert-manager.crds.yaml
   ### source: https://github.com/bitnami-labs/sealed-secrets/tree/helm-v2.1.5/helm/sealed-secrets/crds
   - https://raw.githubusercontent.com/bitnami-labs/sealed-secrets/main/helm/sealed-secrets/crds/bitnami.com_sealedsecrets.yaml
   ### source: https://github.com/bank-vaults/vault-operator/tree/v1.21.2/deploy/charts/vault-operator/crds
